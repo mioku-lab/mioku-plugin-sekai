@@ -4,7 +4,7 @@ import type {
   CompactGacha,
   GachaResult,
 } from "../types";
-import { cardImageUrl } from "../data/sources";
+import { cardImageUrl, gachaBannerUrl, gachaLogoUrl } from "../data/sources";
 import {
   RARITY_COLOR,
   RARITY_NAME,
@@ -57,23 +57,38 @@ export function renderGachaInfo(
 
   const seen = new Set<number>();
   const up: CompactCard[] = [];
-  for (const entry of [...gacha.cards].sort((a, b) => Number(b.isWish) - Number(a.isWish))) {
+  for (const cardId of gacha.gachaPickups ?? []) {
     if (up.length >= 8) break;
-    if (seen.has(entry.cardId)) continue;
-    const card = cardById.get(entry.cardId);
+    if (seen.has(cardId)) continue;
+    const card = cardById.get(cardId);
     if (!card) continue;
-    if (!entry.isWish && card.rarity !== "rarity_4" && card.rarity !== "rarity_birthday" && card.rarity !== "rarity_3") continue;
-    seen.add(entry.cardId);
+    seen.add(cardId);
     up.push(card);
   }
+  const extraPickups = (gacha.gachaPickups ?? []).length - up.length;
+  const tags = [
+    gacha.isSelectCharacter ? badge("角色自选", "#f26d9b") : "",
+    gacha.wishSelectCount ? badge(`心愿选择 ${gacha.wishSelectCount} 张`, "#7f9cf5") : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   const body = `
     ${head(gacha.name, `Gacha #${gacha.id}`)}
+    ${
+      gacha.assetbundleName
+        ? `<div class="panel" style="padding:8px">
+            <img src="${gachaBannerUrl(gacha.id)}" style="width:100%;border-radius:10px;display:block"
+              onerror="this.dataset.f=(+this.dataset.f||0)+1;if(this.dataset.f==='1'){this.src='${gachaLogoUrl(gacha.assetbundleName)}'}else{this.remove()}"/>
+          </div>`
+        : ""
+    }
     <div class="panel">
       <h3>卡池信息</h3>
       <div class="row">
         ${kv("类型", esc(gacha.gachaType))}
         ${kv("时间", esc(timeRange(gacha.startAt, gacha.endAt)))}
+        ${tags ? `<div style="display:flex;gap:8px;align-items:center">${tags}</div>` : ""}
       </div>
       <div class="hr"></div>
       <div class="row">
@@ -86,10 +101,19 @@ export function renderGachaInfo(
       </div>
     </div>
     ${
+      gacha.gachaInformation
+        ? `<div class="panel"><h3>介绍</h3><div class="muted" style="font-size:12px;line-height:1.9;white-space:pre-wrap">${esc(gacha.gachaInformation)}</div></div>`
+        : ""
+    }
+    ${
       up.length
-        ? `<div class="panel"><h3>UP 卡池（按权重抽取）</h3><div class="grid">${up
+        ? `<div class="panel"><h3>UP 卡池</h3><div class="grid">${up
             .map((c) => cardCell(c, characters, showTrained))
-            .join("")}</div></div>`
+            .join("")}</div>${
+            extraPickups > 0
+              ? `<div class="muted" style="margin-top:8px">…另有 ${extraPickups} 张 UP 卡未展示</div>`
+              : ""
+          }</div>`
         : ""
     }`;
 

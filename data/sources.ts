@@ -10,7 +10,8 @@ export type MasterFileKey =
   | "unitProfiles"
   | "characterProfiles"
   | "cardRarities"
-  | "characterIcons";
+  | "characterIcons"
+  | "materials";
 
 export interface MasterFileSpec {
   path: string;
@@ -30,20 +31,29 @@ export const MASTER_FILES: Record<MasterFileKey, MasterFileSpec> = {
   characterProfiles: { path: "master/characterProfiles.json" },
   cardRarities: { path: "master/cardRarities.json" },
   characterIcons: { path: "master/customProfileCharacterIconResources.json" },
+  materials: { path: "master/materials.json" },
 };
 
 export type I18nFileKey =
   | "character_name"
+  | "character_profile"
   | "card_prefix"
+  | "card_skill_name"
+  | "card_gacha_phrase"
   | "music_titles"
   | "event_name"
+  | "unit_profile"
   | "skill_desc";
 
 export const I18N_FILES: Record<I18nFileKey, string> = {
   character_name: "character_name.json",
+  character_profile: "character_profile.json",
   card_prefix: "card_prefix.json",
+  card_skill_name: "card_skill_name.json",
+  card_gacha_phrase: "card_gacha_phrase.json",
   music_titles: "music_titles.json",
   event_name: "event_name.json",
+  unit_profile: "unit_profile.json",
   skill_desc: "skill_desc.json",
 };
 
@@ -94,4 +104,16 @@ export function jacketUrl(assetbundleName: string): string {
 
 export function characterIconUrl(fileName: string): string {
   return `${ASSET_BASE}/custom_profile/character_icon/${fileName}.webp`;
+}
+
+export function eventImageUrl(assetbundleName: string): string {
+  return `${ASSET_BASE}/event/${assetbundleName}/screen/bg.webp`;
+}
+
+export function gachaBannerUrl(gachaId: number): string {
+  return `${ASSET_BASE}/home/banner/banner_gacha${gachaId}/banner_gacha${gachaId}.webp`;
+}
+
+export function gachaLogoUrl(assetbundleName: string): string {
+  return `${ASSET_BASE}/gacha/${assetbundleName}/logo/logo.webp`;
 }

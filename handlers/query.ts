@@ -84,7 +84,8 @@ export async function handleCard(h: HandlerContext, query: string): Promise<stri
   }
   const card = matches[0];
   const character = charMap.get(card.characterId);
-  await renderAndReply(h, renderCardDetail(card, character));
+  const materials = await h.store.getMaterials();
+  await renderAndReply(h, renderCardDetail(card, character, materials));
   const rarity = card.rarity.replace("rarity_", "");
   const ch = character ? charFullName(character) : `角色 #${card.characterId}`;
   return `已为用户发送 ${ch} 的卡牌 ${card.prefixZh ?? card.prefix}（#${card.id}，${rarity}★ ${card.attr}）卡面图`;

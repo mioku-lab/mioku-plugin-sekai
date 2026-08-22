@@ -55,7 +55,19 @@ interface RawCard {
   prefix: string;
   assetbundleName: string;
   releaseAt: number;
+  gachaPhrase?: string;
+  flavorText?: string;
+  archivePublishedAt?: number;
+  specialTrainingCosts?: Array<{
+    seq: number;
+    cost?: { resourceId?: number; quantity?: number };
+  }>;
   cardParameters: RawCardParameter[];
+}
+
+interface RawMaterial {
+  id: number;
+  name: string;
 }
 
 interface RawRarity {
@@ -101,14 +113,28 @@ interface RawEvent {
   startAt?: number;
   aggregateAt?: number;
   rankingAnnounceAt?: number;
+  distributionStartAt?: number;
   distributionEndAt?: number;
+  closedAt?: number;
   unit?: string;
+  assetbundleName?: string;
+  bgmAssetbundleName?: string;
+  eventRankingRewardRanges?: Array<{
+    fromRank: number;
+    toRank: number;
+    isToRankBorder?: boolean;
+  }>;
 }
 
 interface RawGachaDetail {
   cardId: number;
   weight: number;
   isWish?: boolean;
+}
+
+interface RawGachaPickup {
+  cardId: number;
+  gachaPickupType?: string;
 }
 
 interface RawGachaRate {
@@ -125,6 +151,11 @@ interface RawGacha {
   startAt: number;
   endAt: number;
   isShowPeriod?: boolean;
+  assetbundleName?: string;
+  gachaInformation?: { summary?: string };
+  gachaPickups?: RawGachaPickup[];
+  wishSelectCount?: number;
+  isSelectCharacter?: boolean;
   gachaCardRarityRates?: RawGachaRate[];
   gachaDetails?: RawGachaDetail[];
 }
@@ -149,6 +180,7 @@ export function buildCharacters(
   zhName: Record<string, { firstName?: string; givenName?: string }>,
   rawUnits: RawUnitProfile[],
   rawIcons: RawCharacterIcon[] = [],
+  zhUnits: Record<string, { name?: string }> = {},
 ): CompactCharacter[] {
   const units = new Map(rawUnits.map((u) => [u.unit, u]));
   const iconById = new Map(rawIcons.map((i) => [i.id, i.fileName]));
@@ -169,7 +201,7 @@ export function buildCharacters(
       modelName: c.modelName,
       iconFileName: iconById.get(c.id),
       nameZh: zh ? `${zh.firstName ?? ""}${zh.givenName ?? ""}` : undefined,
-      unitName: unit?.unitName,
+      unitName: zhUnits[c.unit]?.name ?? unit?.unitName,
       colorCode: unit?.colorCode,
     };
   });
@@ -177,22 +209,24 @@ export function buildCharacters(
 
 export function buildUnitMap(
   raw: RawUnitProfile[],
+  zh: Record<string, { name?: string }> = {},
 ): Record<string, { unitName?: string; colorCode?: string }> {
   const out: Record<string, { unitName?: string; colorCode?: string }> = {};
-  for (const u of raw) out[u.unit] = { unitName: u.unitName, colorCode: u.colorCode };
+  for (const u of raw) {
+    out[u.unit] = {
+      unitName: zh[u.unit]?.name ?? u.unitName,
+      colorCode: u.colorCode,
+    };
+  }
   return out;
 }
-
-const TRAINED_RARITIES: ReadonlySet<CardRarity> = new Set([
-  "rarity_3",
-  "rarity_4",
-  "rarity_birthday",
-]);
 
 export function buildCards(
   raw: RawCard[],
   zhPrefix: Record<string, string>,
   rawRarities: RawRarity[],
+  zhSkill: Record<string, string> = {},
+  zhGachaPhrase: Record<string, string> = {},
 ): CompactCard[] {
   const levels = new Map(
     rawRarities.map((r) => [
@@ -200,12 +234,16 @@ export function buildCards(
       { max: r.maxLevel ?? 0, trained: r.trainingMaxLevel ?? r.maxLevel ?? 0 },
     ]),
   );
+  const real = (s?: string) => (s && s !== "-" ? s : undefined);
   return raw.map((c) => {
     const lv = levels.get(c.cardRarityType);
     const max = lv?.max ?? 0;
     const trained = lv?.trained ?? max;
     const maxPower = sumPowerAt(c.cardParameters, max);
     const trainedPower = trained > max ? sumPowerAt(c.cardParameters, trained) : undefined;
+    const costs = (c.specialTrainingCosts ?? [])
+      .filter((e) => e.cost?.quantity)
+      .map((e) => ({ resourceId: e.cost!.resourceId ?? 0, quantity: e.cost!.quantity ?? 0 }));
     return {
       id: c.id,
       seq: c.seq,
@@ -216,13 +254,27 @@ export function buildCards(
       prefix: c.prefix,
       prefixZh: zhPrefix[String(c.id)],
       cardSkillName: c.cardSkillName,
+      cardSkillNameZh: zhSkill[String(c.id)],
+      gachaPhrase: real(c.gachaPhrase),
+      gachaPhraseZh: real(zhGachaPhrase[String(c.id)]),
+      archivePublishedAt:
+        c.archivePublishedAt && c.archivePublishedAt >= 1577836800000
+          ? c.archivePublishedAt
+          : undefined,
+      specialTrainingCosts: costs.length ? costs : undefined,
       skillId: c.skillId,
       releaseAt: c.releaseAt ?? 0,
-      hasTrained: TRAINED_RARITIES.has(c.cardRarityType),
+      hasTrained: costs.length > 0,
       maxPower,
       trainedPower,
     } as CompactCard;
   });
+}
+
+export function buildMaterialNames(raw: RawMaterial[]): Record<number, string> {
+  const out: Record<number, string> = {};
+  for (const m of raw) out[m.id] = m.name;
+  return out;
 }
 
 function sumPowerAt(params: RawCardParameter[], level: number): number | undefined {
@@ -304,8 +356,16 @@ export function buildEvents(
     startAt: e.startAt ?? 0,
     aggregateAt: e.aggregateAt ?? 0,
     rankingAnnounceAt: e.rankingAnnounceAt ?? 0,
+    distributionStartAt: e.distributionStartAt,
     distributionEndAt: e.distributionEndAt ?? 0,
+    closedAt: e.closedAt,
     unit: e.unit ?? "none",
+    assetbundleName: e.assetbundleName,
+    bgmAssetbundleName: e.bgmAssetbundleName,
+    eventRankingRewardRanges: (e.eventRankingRewardRanges ?? []).map((r) => ({
+      fromRank: r.fromRank,
+      toRank: r.toRank,
+    })),
   }));
 }
 
@@ -323,6 +383,10 @@ export function buildGachas(raw: RawGacha[]): CompactGacha[] {
       weight: d.weight,
       isWish: d.isWish === true,
     }));
+    const pickups: number[] = [];
+    for (const p of g.gachaPickups ?? []) {
+      if (!pickups.includes(p.cardId)) pickups.push(p.cardId);
+    }
     return {
       id: g.id,
       gachaType: g.gachaType,
@@ -331,25 +395,36 @@ export function buildGachas(raw: RawGacha[]): CompactGacha[] {
       startAt: g.startAt,
       endAt: g.endAt,
       isShowPeriod: g.isShowPeriod !== false,
+      assetbundleName: g.assetbundleName,
+      gachaInformation: g.gachaInformation?.summary,
+      gachaPickups: pickups.length ? pickups : undefined,
+      wishSelectCount: g.wishSelectCount,
+      isSelectCharacter: g.isSelectCharacter === true,
       rates,
       cards,
     };
   });
 }
 
-export function buildProfiles(raw: RawCharacterProfile[]): CharacterProfile[] {
-  return raw.map((p) => ({
-    characterId: p.characterId,
-    voice: p.characterVoice ?? "",
-    birthday: p.birthday ?? "",
-    height: p.height ?? "",
-    school: p.school ?? "",
-    schoolYear: p.schoolYear ?? "",
-    hobby: p.hobby ?? "",
-    specialSkill: p.specialSkill ?? "",
-    favoriteFood: p.favoriteFood ?? "",
-    hatedFood: p.hatedFood ?? "",
-    weak: p.weak ?? "",
-    introduction: p.introduction ?? "",
-  }));
+export function buildProfiles(
+  raw: RawCharacterProfile[],
+  zh: Record<string, Partial<RawCharacterProfile>> = {},
+): CharacterProfile[] {
+  return raw.map((p) => {
+    const t = zh[String(p.characterId)] ?? {};
+    return {
+      characterId: p.characterId,
+      voice: t.characterVoice ?? p.characterVoice ?? "",
+      birthday: t.birthday ?? p.birthday ?? "",
+      height: t.height ?? p.height ?? "",
+      school: t.school ?? p.school ?? "",
+      schoolYear: t.schoolYear ?? p.schoolYear ?? "",
+      hobby: t.hobby ?? p.hobby ?? "",
+      specialSkill: t.specialSkill ?? p.specialSkill ?? "",
+      favoriteFood: t.favoriteFood ?? p.favoriteFood ?? "",
+      hatedFood: t.hatedFood ?? p.hatedFood ?? "",
+      weak: t.weak ?? p.weak ?? "",
+      introduction: t.introduction ?? p.introduction ?? "",
+    };
+  });
 }

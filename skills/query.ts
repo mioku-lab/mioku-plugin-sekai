@@ -55,9 +55,15 @@ async function formatCardDetail(
   const ch = charMap.get(card.characterId);
   return [
     `#${card.id} ${cardTitle(card)}（${ch ? charName(ch) : "角色" + card.characterId}）`,
-    `稀有度：${card.rarity.replace("rarity_", "")}★　属性：${card.attr}　技能：${card.cardSkillName}`,
+    `稀有度：${card.rarity.replace("rarity_", "")}★　属性：${card.attr}　技能：${card.cardSkillNameZh ?? card.cardSkillName}`,
     `综合力：${card.maxPower ?? "-"}${card.trainedPower ? `（特训后 ${card.trainedPower}）` : ""}`,
     `实装：${new Date(card.releaseAt).toLocaleDateString()}`,
+    card.archivePublishedAt
+      ? `进档案：${new Date(card.archivePublishedAt).toLocaleDateString()}`
+      : "",
+    card.gachaPhraseZh ?? card.gachaPhrase
+      ? `抽卡台词：「${card.gachaPhraseZh ?? card.gachaPhrase}」`
+      : "",
     `卡面：${cardImageUrl(card.assetbundleName, false)}`,
     card.hasTrained ? `特训后卡面：${cardImageUrl(card.assetbundleName, true)}` : "",
   ]
@@ -185,8 +191,19 @@ async function handleEventInfo(
     `开始：${new Date(e.startAt).toLocaleString()}`,
     `结算：${new Date(e.aggregateAt).toLocaleString()}`,
     `排行公布：${new Date(e.rankingAnnounceAt).toLocaleString()}`,
+    e.distributionStartAt
+      ? `奖励发放：${new Date(e.distributionStartAt).toLocaleString()}`
+      : "",
     `奖励分发截止：${new Date(e.distributionEndAt).toLocaleString()}`,
-  ].join("\n");
+    e.closedAt ? `活动关闭：${new Date(e.closedAt).toLocaleString()}` : "",
+    e.eventRankingRewardRanges?.length
+      ? `排名奖励档位：${e.eventRankingRewardRanges
+          .map((r) => `${r.fromRank}${r.fromRank !== r.toRank ? `~${r.toRank}` : ""}位`)
+          .join("、")}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 async function handleGachaInfo(store: SekaiStore): Promise<string> {
@@ -197,10 +214,9 @@ async function handleGachaInfo(store: SekaiStore): Promise<string> {
   const cardById = new Map(cards.map((c) => [c.id, c]));
   const chars = await store.getCharacters();
   const charMap = new Map(chars.map((c) => [c.id, c]));
-  const up = [...gacha.cards]
-    .sort((a, b) => Number(b.isWish) - Number(a.isWish))
+  const up = (gacha.gachaPickups ?? [])
     .slice(0, 6)
-    .map((e) => cardById.get(e.cardId))
+    .map((id) => cardById.get(id))
     .filter(Boolean)
     .map((c) => cardLine(c as CompactCard, charMap));
   return [

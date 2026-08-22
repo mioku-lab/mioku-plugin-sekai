@@ -11,6 +11,7 @@ import {
   buildCharacters,
   buildEvents,
   buildGachas,
+  buildMaterialNames,
   buildMusics,
   buildProfiles,
   buildUnitMap,
@@ -19,6 +20,7 @@ import {
   i18nUrlCandidates,
   MASTER_FILES,
   masterUrlCandidates,
+  type I18nFileKey,
   type MasterFileKey,
 } from "./sources";
 import type {
@@ -39,7 +41,7 @@ export interface SekaiStoreOptions {
   i18nTtlMs: number;
 }
 
-const COMPACT_SCHEMA_VERSION = 2;
+const COMPACT_SCHEMA_VERSION = 6;
 
 export class SekaiStore {
   private fetcher: CachedFetcher;
@@ -55,6 +57,7 @@ export class SekaiStore {
   private profilesP?: Promise<CharacterProfile[]>;
   private unitsP?: Promise<Record<string, { unitName?: string; colorCode?: string }>>;
   private artistsP?: Promise<ArtistInfo[]>;
+  private materialsP?: Promise<Record<number, string>>;
 
   constructor(opts: SekaiStoreOptions) {
     this.opts = opts;
@@ -123,6 +126,14 @@ export class SekaiStore {
     return this.unitsP;
   }
 
+  getMaterials(): Promise<Record<number, string>> {
+    this.materialsP ??= this.loadMaterials().catch((err) => {
+      this.materialsP = undefined;
+      throw err;
+    });
+    return this.materialsP;
+  }
+
   getArtists(): Promise<ArtistInfo[]> {
     this.artistsP ??= this.loadArtists().catch((err) => {
       this.artistsP = undefined;
@@ -141,6 +152,7 @@ export class SekaiStore {
     this.profilesP = undefined;
     this.unitsP = undefined;
     this.artistsP = undefined;
+    this.materialsP = undefined;
     for (const name of COMPACT_NAMES) {
       try {
         unlinkSync(`${this.cacheDir}/${name}.json`);
@@ -156,7 +168,7 @@ export class SekaiStore {
     );
   }
 
-  private fetchI18n(key: "character_name" | "card_prefix" | "music_titles" | "event_name") {
+  private fetchI18n(key: I18nFileKey) {
     return this.fetcher.fetchJson(i18nUrlCandidates(key, this.opts.proxyBase), {
       ttlMs: this.opts.i18nTtlMs,
       disk: true,
@@ -167,13 +179,14 @@ export class SekaiStore {
   private async loadCharacters(): Promise<CompactCharacter[]> {
     const cached = this.readCompact("characters.min");
     if (cached) return cached;
-    const [raw, zh, units, icons] = await Promise.all([
+    const [raw, zh, units, icons, zhUnits] = await Promise.all([
       this.fetchMaster("characters"),
       this.fetchI18n("character_name"),
       this.fetchMaster("unitProfiles"),
       this.fetchMaster("characterIcons"),
+      this.fetchI18n("unit_profile"),
     ]);
-    const built = buildCharacters(raw, zh ?? {}, units, icons ?? []);
+    const built = buildCharacters(raw, zh ?? {}, units, icons ?? [], zhUnits ?? {});
     this.writeCompact("characters.min", built);
     return built;
   }
@@ -181,12 +194,14 @@ export class SekaiStore {
   private async loadCards(): Promise<CompactCard[]> {
     const cached = this.readCompact("cards.min");
     if (cached) return cached;
-    const [raw, zh, rarities] = await Promise.all([
+    const [raw, zh, rarities, zhSkill, zhPhrase] = await Promise.all([
       this.fetchMaster("cards"),
       this.fetchI18n("card_prefix"),
       this.fetchMaster("cardRarities"),
+      this.fetchI18n("card_skill_name"),
+      this.fetchI18n("card_gacha_phrase"),
     ]);
-    const built = buildCards(raw, zh ?? {}, rarities);
+    const built = buildCards(raw, zh ?? {}, rarities, zhSkill ?? {}, zhPhrase ?? {});
     this.writeCompact("cards.min", built);
     return built;
   }
@@ -247,8 +262,11 @@ export class SekaiStore {
   private async loadProfiles(): Promise<CharacterProfile[]> {
     const cached = this.readCompact("profiles.min");
     if (cached) return cached;
-    const raw = await this.fetchMaster("characterProfiles");
-    const built = buildProfiles(raw);
+    const [raw, zh] = await Promise.all([
+      this.fetchMaster("characterProfiles"),
+      this.fetchI18n("character_profile"),
+    ]);
+    const built = buildProfiles(raw, zh ?? {});
     this.writeCompact("profiles.min", built);
     return built;
   }
@@ -256,9 +274,21 @@ export class SekaiStore {
   private async loadUnits(): Promise<Record<string, { unitName?: string; colorCode?: string }>> {
     const cached = this.readCompact("units.min");
     if (cached) return cached;
-    const raw = await this.fetchMaster("unitProfiles");
-    const built = buildUnitMap(raw);
+    const [raw, zh] = await Promise.all([
+      this.fetchMaster("unitProfiles"),
+      this.fetchI18n("unit_profile"),
+    ]);
+    const built = buildUnitMap(raw, zh ?? {});
     this.writeCompact("units.min", built);
+    return built;
+  }
+
+  private async loadMaterials(): Promise<Record<number, string>> {
+    const cached = this.readCompact("materials.min");
+    if (cached) return cached;
+    const raw = await this.fetchMaster("materials");
+    const built = buildMaterialNames(raw);
+    this.writeCompact("materials.min", built);
     return built;
   }
 
@@ -308,6 +338,7 @@ const COMPACT_NAMES = [
   "gachas.min",
   "profiles.min",
   "units.min",
+  "materials.min",
 ];
 
 export type SekaiDataKind =

@@ -60,6 +60,7 @@ export async function searchSekaiData(
     return [
       c.prefixZh ?? "",
       c.prefix,
+      c.cardSkillNameZh ?? "",
       c.cardSkillName,
       ...(ch
         ? [ch.nameZh ?? "", `${ch.firstName}${ch.givenName}`, ch.firstNameEn]

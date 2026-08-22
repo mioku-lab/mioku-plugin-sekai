@@ -33,6 +33,11 @@ export interface CompactCharacter {
   iconFileName?: string;
 }
 
+export interface TrainingCost {
+  resourceId: number;
+  quantity: number;
+}
+
 export interface CompactCard {
   id: number;
   seq: number;
@@ -43,6 +48,11 @@ export interface CompactCard {
   prefix: string;
   prefixZh?: string;
   cardSkillName: string;
+  cardSkillNameZh?: string;
+  gachaPhrase?: string;
+  gachaPhraseZh?: string;
+  archivePublishedAt?: number;
+  specialTrainingCosts?: TrainingCost[];
   skillId: number;
   releaseAt: number;
   hasTrained: boolean;
@@ -71,6 +81,11 @@ export interface CompactMusic {
   vocals?: string[];
 }
 
+export interface EventRankingRewardRange {
+  fromRank: number;
+  toRank: number;
+}
+
 export interface CompactEvent {
   id: number;
   eventType: string;
@@ -79,8 +94,13 @@ export interface CompactEvent {
   startAt: number;
   aggregateAt: number;
   rankingAnnounceAt: number;
+  distributionStartAt?: number;
   distributionEndAt: number;
+  closedAt?: number;
   unit: string;
+  assetbundleName?: string;
+  bgmAssetbundleName?: string;
+  eventRankingRewardRanges?: EventRankingRewardRange[];
 }
 
 export interface GachaRate {
@@ -103,6 +123,11 @@ export interface CompactGacha {
   startAt: number;
   endAt: number;
   isShowPeriod: boolean;
+  assetbundleName?: string;
+  gachaInformation?: string;
+  gachaPickups?: number[];
+  wishSelectCount?: number;
+  isSelectCharacter?: boolean;
   rates: GachaRate[];
   cards: GachaPoolEntry[];
 }
