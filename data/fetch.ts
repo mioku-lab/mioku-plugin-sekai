@@ -5,14 +5,21 @@ export interface FetchOptions {
   ttlMs?: number;
   disk?: boolean;
   key?: string;
+  timeoutMs?: number;
 }
+
+const DEFAULT_TIMEOUT_MS = 30_000;
 
 function sanitizeKey(key: string): string {
   return key.replace(/[^a-zA-Z0-9_-]/g, "_");
 }
 
+function timeoutSignal(ms: number): AbortSignal {
+  return AbortSignal.timeout(ms);
+}
+
 export interface CachedFetcher {
-  fetchJson(url: string, opts?: FetchOptions): Promise<any>;
+  fetchJson(urls: string | string[], opts?: FetchOptions): Promise<any>;
   cacheDir: string;
 }
 
@@ -20,8 +27,10 @@ export function createCachedFetcher(dataDir: string): CachedFetcher {
   const cacheDir = join(dataDir, "cache");
   const mem = new Map<string, { at: number; data: any }>();
 
-  async function fetchJson(url: string, opts: FetchOptions = {}): Promise<any> {
-    const { ttlMs = 0, disk = false, key = url } = opts;
+  async function fetchJson(urls: string | string[], opts: FetchOptions = {}): Promise<any> {
+    const list = Array.isArray(urls) ? urls : [urls];
+    const primary = list[0];
+    const { ttlMs = 0, disk = false, key = primary, timeoutMs = DEFAULT_TIMEOUT_MS } = opts;
     const now = Date.now();
 
     if (ttlMs > 0) {
@@ -42,18 +51,32 @@ export function createCachedFetcher(dataDir: string): CachedFetcher {
       }
     }
 
-    const res = await fetch(url, { redirect: "follow" });
-    if (!res.ok) {
-      throw new Error(`GET ${url} 失败: ${res.status} ${res.statusText}`);
-    }
-    const data = await res.json();
+    const attempts: string[] = [];
+    for (const url of list) {
+      try {
+        const res = await fetch(url, {
+          redirect: "follow",
+          signal: timeoutSignal(timeoutMs),
+        });
+        if (!res.ok) {
+          attempts.push(`${url} -> HTTP ${res.status} ${res.statusText}`);
+          continue;
+        }
+        const data = await res.json();
 
-    if (ttlMs > 0) mem.set(key, { at: now, data });
-    if (disk) {
-      mkdirSync(cacheDir, { recursive: true });
-      writeFileSync(file, JSON.stringify(data));
+        if (ttlMs > 0) mem.set(key, { at: now, data });
+        if (disk) {
+          mkdirSync(cacheDir, { recursive: true });
+          writeFileSync(file, JSON.stringify(data));
+        }
+        return data;
+      } catch (err) {
+        attempts.push(`${url} -> ${String(err)}`);
+      }
     }
-    return data;
+
+    const detail = attempts.join(" | ");
+    throw new Error(`所有数据源请求均失败（${detail}）`);
   }
 
   return { fetchJson, cacheDir };

@@ -6,7 +6,7 @@ import {
   normalizeSekaiConfig,
   type SekaiConfig,
 } from "./configs/base";
-import { SekaiStore } from "./data/store";
+import { SekaiStore, type SekaiDataKind } from "./data/store";
 import { handleRoll } from "./handlers/gacha";
 import {
   handleCard,
@@ -18,11 +18,22 @@ import {
 } from "./handlers/query";
 import { handleSearch } from "./handlers/search";
 import type { HandlerContext } from "./handlers/types";
-import { parseSekaiCommand } from "./router";
+import { parseSekaiCommand, type SekaiCommand } from "./router";
 import { createSekaiSkill } from "./skills";
 import { replyError, replyText } from "./utils";
 
 const PLUGIN_NAME = "sekai";
+
+const COMMAND_KINDS: Partial<Record<SekaiCommand["type"], SekaiDataKind[]>> = {
+  characters: ["characters", "units"],
+  character: ["characters", "profiles"],
+  card: ["cards", "characters"],
+  music: ["musics"],
+  event: ["events"],
+  gacha: ["gachas", "cards", "characters"],
+  roll: ["gachas", "cards", "characters"],
+  search: ["characters", "cards", "musics", "events", "gachas"],
+};
 
 const sekaiPlugin = definePlugin({
   name: PLUGIN_NAME,
@@ -52,6 +63,7 @@ const sekaiPlugin = definePlugin({
     const store = new SekaiStore({
       dataDir,
       preferCdn: config.preferCdn,
+      proxyBase: config.proxyBase,
       dataTtlMs: config.dataTtlHours * 3600_000,
       i18nTtlMs: config.i18nTtlHours * 3600_000,
     });
@@ -82,6 +94,15 @@ const sekaiPlugin = definePlugin({
         screenshot,
         getConfig: () => config,
       };
+
+      const kinds = COMMAND_KINDS[cmd.type];
+      if (kinds && !store.isWarm(kinds)) {
+        void replyText(
+          ctx,
+          event,
+          "正在加载世界计划数据（首次查询需要下载数据，可能较慢），请稍候…",
+        ).catch(() => {});
+      }
 
       try {
         switch (cmd.type) {
@@ -120,6 +141,24 @@ const sekaiPlugin = definePlugin({
     });
 
     ctx.logger.info("sekai 插件初始化完成");
+
+    if (config.preloadOnStart) {
+      queueMicrotask(() => {
+        void Promise.allSettled([
+          store.getCharacters(),
+          store.getUnits(),
+          store.getMusics(),
+          store.getCards(),
+          store.getGachas(),
+          store.getEvents(),
+          store.getProfiles(),
+        ]).then((results) => {
+          const failed = results.filter((r) => r.status === "rejected").length;
+          if (failed) ctx.logger.warn(`sekai 数据预加载完成，${failed} 项失败`);
+          else ctx.logger.info("sekai 数据预加载完成");
+        });
+      });
+    }
 
     return () => {
       if (aiService) aiService.removeSkill("sekai");

@@ -15,7 +15,12 @@ import {
   buildProfiles,
   buildUnitMap,
 } from "./build";
-import { i18nUrl, masterUrl, type MasterFileKey } from "./sources";
+import {
+  i18nUrlCandidates,
+  MASTER_FILES,
+  masterUrlCandidates,
+  type MasterFileKey,
+} from "./sources";
 import type {
   ArtistInfo,
   CharacterProfile,
@@ -29,6 +34,7 @@ import type {
 export interface SekaiStoreOptions {
   dataDir: string;
   preferCdn: boolean;
+  proxyBase: string;
   dataTtlMs: number;
   i18nTtlMs: number;
 }
@@ -57,12 +63,18 @@ export class SekaiStore {
   }
 
   getCharacters(): Promise<CompactCharacter[]> {
-    this.charactersP ??= this.loadCharacters();
+    this.charactersP ??= this.loadCharacters().catch((err) => {
+      this.charactersP = undefined;
+      throw err;
+    });
     return this.charactersP;
   }
 
   getCards(): Promise<CompactCard[]> {
-    this.cardsP ??= this.loadCards();
+    this.cardsP ??= this.loadCards().catch((err) => {
+      this.cardsP = undefined;
+      throw err;
+    });
     return this.cardsP;
   }
 
@@ -72,32 +84,50 @@ export class SekaiStore {
   }
 
   getMusics(): Promise<CompactMusic[]> {
-    this.musicsP ??= this.loadMusics();
+    this.musicsP ??= this.loadMusics().catch((err) => {
+      this.musicsP = undefined;
+      throw err;
+    });
     return this.musicsP;
   }
 
   getEvents(): Promise<CompactEvent[]> {
-    this.eventsP ??= this.loadEvents();
+    this.eventsP ??= this.loadEvents().catch((err) => {
+      this.eventsP = undefined;
+      throw err;
+    });
     return this.eventsP;
   }
 
   getGachas(): Promise<CompactGacha[]> {
-    this.gachasP ??= this.loadGachas();
+    this.gachasP ??= this.loadGachas().catch((err) => {
+      this.gachasP = undefined;
+      throw err;
+    });
     return this.gachasP;
   }
 
   getProfiles(): Promise<CharacterProfile[]> {
-    this.profilesP ??= this.loadProfiles();
+    this.profilesP ??= this.loadProfiles().catch((err) => {
+      this.profilesP = undefined;
+      throw err;
+    });
     return this.profilesP;
   }
 
   getUnits(): Promise<Record<string, { unitName?: string; colorCode?: string }>> {
-    this.unitsP ??= this.loadUnits();
+    this.unitsP ??= this.loadUnits().catch((err) => {
+      this.unitsP = undefined;
+      throw err;
+    });
     return this.unitsP;
   }
 
   getArtists(): Promise<ArtistInfo[]> {
-    this.artistsP ??= this.loadArtists();
+    this.artistsP ??= this.loadArtists().catch((err) => {
+      this.artistsP = undefined;
+      throw err;
+    });
     return this.artistsP;
   }
 
@@ -120,11 +150,14 @@ export class SekaiStore {
   }
 
   private fetchMaster(key: MasterFileKey): Promise<any> {
-    return this.fetcher.fetchJson(masterUrl(key, this.opts.preferCdn));
+    return this.fetcher.fetchJson(
+      masterUrlCandidates(key, this.opts.preferCdn, this.opts.proxyBase),
+      { timeoutMs: MASTER_FILES[key].big ? 60_000 : undefined },
+    );
   }
 
   private fetchI18n(key: "character_name" | "card_prefix" | "music_titles" | "event_name") {
-    return this.fetcher.fetchJson(i18nUrl(key), {
+    return this.fetcher.fetchJson(i18nUrlCandidates(key, this.opts.proxyBase), {
       ttlMs: this.opts.i18nTtlMs,
       disk: true,
       key: `i18n-${key}`,
@@ -232,8 +265,20 @@ export class SekaiStore {
   private async getCardMap(): Promise<Map<number, CompactCard>> {
     this.cardByIdP ??= this.getCards().then(
       (cards) => new Map(cards.map((c) => [c.id, c])),
+      (err) => {
+        this.cardByIdP = undefined;
+        throw err;
+      },
     );
     return this.cardByIdP;
+  }
+
+  isWarm(kinds: SekaiDataKind[]): boolean {
+    return kinds.every((kind) =>
+      KIND_COMPACTS[kind].every((name) =>
+        compactFresh(this.cacheDir, name, this.opts.dataTtlMs),
+      ),
+    );
   }
 
   private readCompact(name: string): any | undefined {
@@ -264,3 +309,22 @@ const COMPACT_NAMES = [
   "profiles.min",
   "units.min",
 ];
+
+export type SekaiDataKind =
+  | "characters"
+  | "cards"
+  | "musics"
+  | "events"
+  | "gachas"
+  | "profiles"
+  | "units";
+
+const KIND_COMPACTS: Record<SekaiDataKind, string[]> = {
+  characters: ["characters.min"],
+  cards: ["cards.min"],
+  musics: ["musics.min", "characters.min"],
+  events: ["events.min"],
+  gachas: ["gachas.min"],
+  profiles: ["profiles.min"],
+  units: ["units.min"],
+};

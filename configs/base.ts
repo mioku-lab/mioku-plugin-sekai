@@ -3,6 +3,8 @@ export interface SekaiConfig {
   dataTtlHours: number;
   i18nTtlHours: number;
   preferCdn: boolean;
+  proxyBase: string;
+  preloadOnStart: boolean;
   defaultPulls: number;
   maxPulls: number;
   showTrained: boolean;
@@ -14,6 +16,8 @@ export const DEFAULT_CONFIG: SekaiConfig = {
   dataTtlHours: 12,
   i18nTtlHours: 168,
   preferCdn: true,
+  proxyBase: "https://gh-proxy.com",
+  preloadOnStart: true,
   defaultPulls: 10,
   maxPulls: 300,
   showTrained: true,
@@ -34,6 +38,12 @@ function boolOrDefault(value: unknown, fallback: boolean): boolean {
   return typeof value === "boolean" ? value : fallback;
 }
 
+function proxyBaseOrDefault(value: unknown): string {
+  const s = String(value ?? "").trim().replace(/\/+$/, "");
+  if (!s) return "";
+  return /^https?:\/\//.test(s) ? s : `https://${s}`;
+}
+
 export function normalizeSekaiConfig(config: any): SekaiConfig {
   const c = config || {};
   return {
@@ -41,6 +51,8 @@ export function normalizeSekaiConfig(config: any): SekaiConfig {
     dataTtlHours: numOrDefault(c.dataTtlHours, DEFAULT_CONFIG.dataTtlHours, 1, 720),
     i18nTtlHours: numOrDefault(c.i18nTtlHours, DEFAULT_CONFIG.i18nTtlHours, 1, 2160),
     preferCdn: boolOrDefault(c.preferCdn, DEFAULT_CONFIG.preferCdn),
+    proxyBase: proxyBaseOrDefault(c.proxyBase ?? DEFAULT_CONFIG.proxyBase),
+    preloadOnStart: boolOrDefault(c.preloadOnStart, DEFAULT_CONFIG.preloadOnStart),
     defaultPulls: numOrDefault(c.defaultPulls, DEFAULT_CONFIG.defaultPulls, 1, 300),
     maxPulls: numOrDefault(c.maxPulls, DEFAULT_CONFIG.maxPulls, 1, 300),
     showTrained: boolOrDefault(c.showTrained, DEFAULT_CONFIG.showTrained),

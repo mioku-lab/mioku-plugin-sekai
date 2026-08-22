@@ -25,7 +25,17 @@ fields:
   - key: base.preferCdn
     label: 优先使用 CDN
     type: switch
-    description: 优先走 jsdelivr CDN 读取小文件 master 数据；大文件（cards/gachas）自动回退 raw.githubusercontent.com。
+    description: 优先走 jsdelivr CDN 读取小文件 master 数据；大文件（cards/gachas）自动回退 raw.githubusercontent.com。请求失败或超时会自动尝试备用源。
+
+  - key: base.proxyBase
+    label: GitHub 代理前缀
+    type: text
+    description: 所有 master/i18n 请求优先走该代理（如 https://gh-proxy.com），失败自动回退 CDN/raw.github。留空则禁用代理直连。
+
+  - key: base.preloadOnStart
+    label: 启动时后台预加载数据
+    type: switch
+    description: 机器人启动后在后台预拉取世界计划数据（有本地缓存时为秒级读取），避免首次查询时长时间等待。
 
   - key: base.defaultPulls
     label: 默认抽卡次数
@@ -57,6 +67,8 @@ keys:
   - base.dataTtlHours
   - base.i18nTtlHours
   - base.preferCdn
+  - base.proxyBase
+  - base.preloadOnStart
   - base.defaultPulls
   - base.maxPulls
   - base.showTrained
