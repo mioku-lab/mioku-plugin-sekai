@@ -65,6 +65,12 @@
           "role": "member"
         },
         {
+          "cmd": "pj搜索",
+          "desc": "跨数据模糊搜索（角色/卡/曲/活动/卡池）",
+          "usage": "pj搜索 心愿 / pj搜索 miku",
+          "role": "member"
+        },
+        {
           "cmd": "pj数据更新",
           "desc": "强制刷新插件数据缓存",
           "usage": "pj数据更新",

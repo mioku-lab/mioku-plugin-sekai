@@ -16,6 +16,7 @@ import {
   handleGachaInfo,
   handleMusic,
 } from "./handlers/query";
+import { handleSearch } from "./handlers/search";
 import type { HandlerContext } from "./handlers/types";
 import { parseSekaiCommand } from "./router";
 import { createSekaiSkill } from "./skills";
@@ -98,6 +99,8 @@ const sekaiPlugin = definePlugin({
             return await handleGachaInfo(h);
           case "roll":
             return await handleRoll(h, cmd.pulls);
+          case "search":
+            return await handleSearch(h, cmd.query);
           case "refresh": {
             store.refresh();
             ctx.logger.info("sekai: 数据缓存已手动刷新");

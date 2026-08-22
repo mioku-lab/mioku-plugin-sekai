@@ -134,3 +134,8 @@ export interface GachaResult {
   counts: Record<string, number>;
   totalPower?: number;
 }
+
+export interface ArtistInfo {
+  name: string;
+  musicCount: number;
+}

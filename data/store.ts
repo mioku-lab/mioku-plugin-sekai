@@ -17,6 +17,7 @@ import {
 } from "./build";
 import { i18nUrl, masterUrl, type MasterFileKey } from "./sources";
 import type {
+  ArtistInfo,
   CharacterProfile,
   CompactCard,
   CompactCharacter,
@@ -47,6 +48,7 @@ export class SekaiStore {
   private gachasP?: Promise<CompactGacha[]>;
   private profilesP?: Promise<CharacterProfile[]>;
   private unitsP?: Promise<Record<string, { unitName?: string; colorCode?: string }>>;
+  private artistsP?: Promise<ArtistInfo[]>;
 
   constructor(opts: SekaiStoreOptions) {
     this.opts = opts;
@@ -94,6 +96,11 @@ export class SekaiStore {
     return this.unitsP;
   }
 
+  getArtists(): Promise<ArtistInfo[]> {
+    this.artistsP ??= this.loadArtists();
+    return this.artistsP;
+  }
+
   refresh(): void {
     this.charactersP = undefined;
     this.cardsP = undefined;
@@ -103,6 +110,7 @@ export class SekaiStore {
     this.gachasP = undefined;
     this.profilesP = undefined;
     this.unitsP = undefined;
+    this.artistsP = undefined;
     for (const name of COMPACT_NAMES) {
       try {
         unlinkSync(`${this.cacheDir}/${name}.json`);
@@ -168,6 +176,18 @@ export class SekaiStore {
     const built = buildMusics(raw, diffs, vocals, artists, zh ?? {}, charNames);
     this.writeCompact("musics.min", built);
     return built;
+  }
+
+  private async loadArtists(): Promise<ArtistInfo[]> {
+    const musics = await this.getMusics();
+    const counts = new Map<string, number>();
+    for (const m of musics) {
+      if (!m.artist) continue;
+      counts.set(m.artist, (counts.get(m.artist) ?? 0) + 1);
+    }
+    return [...counts.entries()]
+      .map(([name, musicCount]) => ({ name, musicCount }))
+      .sort((a, b) => b.musicCount - a.musicCount || a.name.localeCompare(b.name));
   }
 
   private async loadEvents(): Promise<CompactEvent[]> {

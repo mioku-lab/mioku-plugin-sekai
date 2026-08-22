@@ -6,6 +6,7 @@ export type SekaiCommand =
   | { type: "event"; count?: number }
   | { type: "gacha" }
   | { type: "roll"; pulls: number }
+  | { type: "search"; query: string }
   | { type: "refresh" }
   | { type: "none" };
 
@@ -66,6 +67,9 @@ export function parseSekaiCommand(text: string): SekaiCommand {
       return { type: "roll", pulls: 10 };
     case "单抽":
       return { type: "roll", pulls: 1 };
+    case "搜索":
+    case "search":
+      return { type: "search", query: arg };
     case "数据更新":
     case "刷新":
     case "refresh":
