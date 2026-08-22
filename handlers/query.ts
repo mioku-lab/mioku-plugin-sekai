@@ -122,16 +122,19 @@ export async function handleMusic(h: HandlerContext, query: string): Promise<str
   return `已为用户发送乐曲 ${m.titleZh ?? m.title}（#${m.id}）的详情图`;
 }
 
-export async function handleEvent(h: HandlerContext, count?: number): Promise<string> {
+export async function handleEvent(h: HandlerContext, id?: number): Promise<string> {
   const events = await h.store.getEvents();
+  if (id != null && id > 0) {
+    const ev = events.find((e) => e.id === id);
+    if (!ev) {
+      await replyText(h.ctx, h.event, `没有找到编号为 ${id} 的活动，试试 pj活动列表 查看近期活动`);
+      return `未找到活动 ${id}`;
+    }
+    await renderAndReply(h, renderEventDetail(ev));
+    return `已为用户发送活动 ${ev.nameZh ?? ev.name}（#${ev.id}）详情图`;
+  }
   const sorted = [...events].sort((a, b) => b.id - a.id);
   const now = Date.now();
-
-  if (count && count > 0) {
-    const picked = sorted.slice(0, Math.min(count, 8));
-    await renderAndReply(h, renderEventList(picked));
-    return `已为用户发送最近 ${picked.length} 期活动列表图`;
-  }
   const current =
     sorted.find((e) => e.startAt <= now && e.distributionEndAt >= now) ?? sorted[0];
   if (!current) {
@@ -140,6 +143,14 @@ export async function handleEvent(h: HandlerContext, count?: number): Promise<st
   }
   await renderAndReply(h, renderEventDetail(current, now));
   return `已为用户发送活动 ${current.nameZh ?? current.name}（#${current.id}）详情图`;
+}
+
+export async function handleEventList(h: HandlerContext, count = 8): Promise<string> {
+  const events = await h.store.getEvents();
+  const sorted = [...events].sort((a, b) => b.id - a.id);
+  const picked = sorted.slice(0, Math.min(Math.max(count, 1), 12));
+  await renderAndReply(h, renderEventList(picked));
+  return `已为用户发送最近 ${picked.length} 期活动列表图`;
 }
 
 export async function handleGachaInfo(h: HandlerContext): Promise<string> {

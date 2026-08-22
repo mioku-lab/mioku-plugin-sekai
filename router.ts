@@ -3,7 +3,8 @@ export type SekaiCommand =
   | { type: "character"; query: string }
   | { type: "card"; query: string }
   | { type: "music"; query: string }
-  | { type: "event"; count?: number }
+  | { type: "event"; id?: number }
+  | { type: "eventList"; count?: number }
   | { type: "gacha" }
   | { type: "roll"; pulls: number }
   | { type: "search"; query: string }
@@ -40,6 +41,8 @@ const COMMAND_SPECS: CommandSpec[] = [
   { word: "曲", type: "music" },
   { word: "music", type: "music" },
   { word: "song", type: "music" },
+  { word: "活动列表", type: "eventList" },
+  { word: "eventlist", type: "eventList" },
   { word: "活动", type: "event" },
   { word: "event", type: "event" },
   { word: "卡池", type: "gacha" },
@@ -81,8 +84,16 @@ export function parseSekaiCommand(text: string): SekaiCommand {
         return { type: "card", query: arg };
       case "music":
         return { type: "music", query: arg };
+      case "eventList":
+        return {
+          type: "eventList",
+          count: /^\d+$/.test(arg) ? Number(arg) : undefined,
+        };
       case "event":
-        return { type: "event", count: /^\d+$/.test(arg) ? Number(arg) : undefined };
+        return {
+          type: "event",
+          id: /^\d+$/.test(arg) ? Number(arg) : undefined,
+        };
       case "gacha":
         return { type: "gacha" };
       case "roll":

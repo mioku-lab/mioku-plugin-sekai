@@ -13,6 +13,7 @@ import {
   handleCharacter,
   handleCharactersList,
   handleEvent,
+  handleEventList,
   handleGachaInfo,
   handleMusic,
 } from "./handlers/query";
@@ -30,6 +31,7 @@ const COMMAND_KINDS: Partial<Record<SekaiCommand["type"], SekaiDataKind[]>> = {
   card: ["cards", "characters"],
   music: ["musics"],
   event: ["events"],
+  eventList: ["events"],
   gacha: ["gachas", "cards", "characters"],
   roll: ["gachas", "cards", "characters"],
   search: ["characters", "cards", "musics", "events", "gachas"],
@@ -115,7 +117,9 @@ const sekaiPlugin = definePlugin({
           case "music":
             return await handleMusic(h, cmd.query);
           case "event":
-            return await handleEvent(h, cmd.count);
+            return await handleEvent(h, cmd.id);
+          case "eventList":
+            return await handleEventList(h, cmd.count);
           case "gacha":
             return await handleGachaInfo(h);
           case "roll":

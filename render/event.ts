@@ -69,6 +69,12 @@ export function renderEventList(events: CompactEvent[]): string {
       .map(
         (e) => `
       <div class="panel" style="display:flex;align-items:center;gap:14px">
+        ${
+          e.assetbundleName
+            ? `<img src="${eventImageUrl(e.assetbundleName)}" style="width:150px;height:84px;border-radius:10px;object-fit:cover;flex-shrink:0"
+                onerror="this.style.display='none'"/>`
+            : ""
+        }
         <div style="flex:1">
           <div class="name-zh" style="font-size:16px">${esc(e.nameZh ?? e.name)}</div>
           ${e.nameZh && e.nameZh !== e.name ? `<div class="name-ja" style="font-size:12px">${esc(e.name)}</div>` : ""}
