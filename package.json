@@ -1,0 +1,84 @@
+{
+  "name": "mioku-plugin-sekai",
+  "version": "0.1.0",
+  "description": "初音未来·世界计划（Project Sekai）辅助插件：角色/卡牌/乐曲/活动/卡池查询与模拟抽卡",
+  "main": "index.ts",
+  "type": "module",
+  "keywords": [
+    "mioku"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mioku-lab/mioku-plugin-sekai.git"
+  },
+  "mioku": {
+    "services": [
+      "ai",
+      "config",
+      "screenshot",
+      "help"
+    ],
+    "help": {
+      "title": "世界计划 ",
+      "description": "初音未来·世界计划辅助：查询角色/卡牌/乐曲/活动/卡池，支持模拟抽卡",
+      "commands": [
+        {
+          "cmd": "pj角色列表",
+          "desc": "查看全部角色一览",
+          "usage": "pj角色列表",
+          "role": "member"
+        },
+        {
+          "cmd": "pj角色",
+          "desc": "查询角色详情（生日/身高/学校/爱好/CV/组合等）",
+          "usage": "pj角色 一歌 / pj角色 miku",
+          "role": "member"
+        },
+        {
+          "cmd": "pj卡",
+          "desc": "查询卡牌（稀有度/属性/技能/卡面/实装时间），支持名称或卡号",
+          "usage": "pj卡 心愿 / pj卡 88",
+          "role": "member"
+        },
+        {
+          "cmd": "pj曲",
+          "desc": "查询乐曲信息与全部难度谱面",
+          "usage": "pj曲 ロキ / pj曲 Tell Your World",
+          "role": "member"
+        },
+        {
+          "cmd": "pj活动",
+          "desc": "查询当前进行中的活动，加数字查看最近 N 个",
+          "usage": "pj活动 / pj活动 3",
+          "role": "member"
+        },
+        {
+          "cmd": "pj卡池",
+          "desc": "查询当前卡池（概率/UP 卡池/时间）",
+          "usage": "pj卡池",
+          "role": "member"
+        },
+        {
+          "cmd": "pj抽卡",
+          "desc": "模拟抽卡：真实卡池与概率，十连含保底",
+          "usage": "pj抽卡 / pj十连 / pj单抽 / pj抽卡 50",
+          "role": "member"
+        },
+        {
+          "cmd": "pj数据更新",
+          "desc": "强制刷新插件数据缓存",
+          "usage": "pj数据更新",
+          "role": "admin"
+        }
+      ]
+    }
+  },
+  "peerDependencies": {
+    "mioku": "^0.9.0",
+    "mioki": "^0.16.0"
+  },
+  "devDependencies": {
+    "mioku": "workspace:*",
+    "mioki": "^0.16.0"
+  }
+}
