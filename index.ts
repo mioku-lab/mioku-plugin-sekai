@@ -7,7 +7,6 @@ import {
   type SekaiConfig,
 } from "./configs/base";
 import { SekaiStore } from "./data/store";
-import { handleHelp } from "./handlers/help";
 import { handleRoll } from "./handlers/gacha";
 import {
   handleCard,
@@ -85,8 +84,6 @@ const sekaiPlugin = definePlugin({
 
       try {
         switch (cmd.type) {
-          case "help":
-            return await handleHelp(h);
           case "characters":
             return await handleCharactersList(h);
           case "character":
@@ -104,16 +101,18 @@ const sekaiPlugin = definePlugin({
           case "refresh": {
             store.refresh();
             ctx.logger.info("sekai: 数据缓存已手动刷新");
-            return await replyText(
+            await replyText(
               ctx,
               event,
               "数据缓存已清除，下次查询时将重新拉取（大文件可能需要一点时间）",
             );
+            return "已刷新 sekai 数据缓存";
           }
         }
       } catch (error) {
         ctx.logger.error(`sekai 命令 ${cmd.type} 执行失败: ${error}`);
         await replyError(ctx, event, `世界计划查询出错了：${String(error)}`);
+        return `sekai 命令 ${cmd.type} 执行失败: ${String(error)}`;
       }
     });
 

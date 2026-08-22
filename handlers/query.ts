@@ -32,30 +32,32 @@ const CHARACTER_NAME_FIELDS = (c: CompactCharacter) => [
   c.givenNameEn ?? "",
 ];
 
-export async function handleCharactersList(h: HandlerContext): Promise<void> {
+export async function handleCharactersList(h: HandlerContext): Promise<string> {
   const [chars, units] = await Promise.all([
     h.store.getCharacters(),
     h.store.getUnits(),
   ]);
   await renderAndReply(h, renderCharacterList(chars, units));
+  return `已为用户发送角色一览图（共 ${chars.length} 名角色）`;
 }
 
-export async function handleCharacter(h: HandlerContext, query: string): Promise<void> {
+export async function handleCharacter(h: HandlerContext, query: string): Promise<string> {
   const chars = await h.store.getCharacters();
   const found = findById(chars, query) ?? rankMatches(chars, query, CHARACTER_NAME_FIELDS)[0];
   if (!found) {
     await replyText(h.ctx, h.event, `没有找到角色「${query}」，试试 pj角色列表 看看全部角色`);
-    return;
+    return `未找到角色 ${query}`;
   }
   const profiles = await h.store.getProfiles();
   const profile = profiles.find((p) => p.characterId === found.id);
   await renderAndReply(h, renderCharacterDetail(found, profile));
+  return `已为用户发送角色 ${charFullName(found)} 的详情图`;
 }
 
-export async function handleCard(h: HandlerContext, query: string): Promise<void> {
+export async function handleCard(h: HandlerContext, query: string): Promise<string> {
   if (!query) {
     await replyText(h.ctx, h.event, "用法：pj卡 <卡名/角色名/卡号>，例如 pj卡 心愿 / pj卡 88");
-    return;
+    return "用户调用 pj卡 但未提供查询关键字";
   }
   const cards = await h.store.getCards();
   const chars = await h.store.getCharacters();
@@ -67,7 +69,7 @@ export async function handleCard(h: HandlerContext, query: string): Promise<void
     : rankMatches(cards, query, (c) => cardSearchFields(c, charMap.get(c.characterId)));
   if (!matches.length) {
     await replyText(h.ctx, h.event, `没有找到卡牌「${query}」，换个关键词试试`);
-    return;
+    return `未找到卡牌 ${query}`;
   }
   if (matches.length > 1) {
     const list = matches
@@ -78,17 +80,20 @@ export async function handleCard(h: HandlerContext, query: string): Promise<void
       )
       .join("\n");
     await replyText(h.ctx, h.event, `找到 ${matches.length} 张相关卡牌，请提供更精确的名称或卡号：\n${list}`);
-    return;
+    return `卡牌 ${query} 有 ${matches.length} 个候选，已回复候选列表请用户细化`;
   }
   const card = matches[0];
   const character = charMap.get(card.characterId);
   await renderAndReply(h, renderCardDetail(card, character));
+  const rarity = card.rarity.replace("rarity_", "");
+  const ch = character ? charFullName(character) : `角色 #${card.characterId}`;
+  return `已为用户发送 ${ch} 的卡牌 ${card.prefixZh ?? card.prefix}（#${card.id}，${rarity}★ ${card.attr}）卡面图`;
 }
 
-export async function handleMusic(h: HandlerContext, query: string): Promise<void> {
+export async function handleMusic(h: HandlerContext, query: string): Promise<string> {
   if (!query) {
     await replyText(h.ctx, h.event, "用法：pj曲 <曲名>，例如 pj曲 ロキ / pj曲 Tell Your World");
-    return;
+    return "用户调用 pj曲 但未提供查询关键字";
   }
   const musics = await h.store.getMusics();
   const byId = findById(musics, query);
@@ -101,7 +106,7 @@ export async function handleMusic(h: HandlerContext, query: string): Promise<voi
       ]);
   if (!matches.length) {
     await replyText(h.ctx, h.event, `没有找到乐曲「${query}」`);
-    return;
+    return `未找到乐曲 ${query}`;
   }
   if (matches.length > 1) {
     const list = matches
@@ -109,35 +114,39 @@ export async function handleMusic(h: HandlerContext, query: string): Promise<voi
       .map((m) => `#${m.id} ${m.titleZh ?? m.title}${m.artist ? `（${m.artist}）` : ""}`)
       .join("\n");
     await replyText(h.ctx, h.event, `找到 ${matches.length} 首相关乐曲：\n${list}`);
-    return;
+    return `乐曲 ${query} 有 ${matches.length} 个候选，已回复候选列表请用户细化`;
   }
-  await renderAndReply(h, renderMusicDetail(matches[0]));
+  const m = matches[0];
+  await renderAndReply(h, renderMusicDetail(m));
+  return `已为用户发送乐曲 ${m.titleZh ?? m.title}（#${m.id}）的详情图`;
 }
 
-export async function handleEvent(h: HandlerContext, count?: number): Promise<void> {
+export async function handleEvent(h: HandlerContext, count?: number): Promise<string> {
   const events = await h.store.getEvents();
   const sorted = [...events].sort((a, b) => b.id - a.id);
   const now = Date.now();
 
   if (count && count > 0) {
-    await renderAndReply(h, renderEventList(sorted.slice(0, Math.min(count, 8))));
-    return;
+    const picked = sorted.slice(0, Math.min(count, 8));
+    await renderAndReply(h, renderEventList(picked));
+    return `已为用户发送最近 ${picked.length} 期活动列表图`;
   }
   const current =
     sorted.find((e) => e.startAt <= now && e.distributionEndAt >= now) ?? sorted[0];
   if (!current) {
     await replyText(h.ctx, h.event, "暂无活动数据");
-    return;
+    return "暂无活动数据";
   }
   await renderAndReply(h, renderEventDetail(current, now));
+  return `已为用户发送活动 ${current.nameZh ?? current.name}（#${current.id}）详情图`;
 }
 
-export async function handleGachaInfo(h: HandlerContext): Promise<void> {
+export async function handleGachaInfo(h: HandlerContext): Promise<string> {
   const gachas = await h.store.getGachas();
   const gacha = pickActiveGacha(gachas);
   if (!gacha) {
     await replyText(h.ctx, h.event, "暂无卡池数据");
-    return;
+    return "暂无卡池数据";
   }
   const [cards, chars] = await Promise.all([
     h.store.getCards(),
@@ -146,4 +155,5 @@ export async function handleGachaInfo(h: HandlerContext): Promise<void> {
   const cardById = new Map(cards.map((c) => [c.id, c]));
   const charMap = new Map(chars.map((c) => [c.id, c]));
   await renderAndReply(h, renderGachaInfo(gacha, cardById, charMap, h.getConfig().showTrained));
+  return `已为用户发送当前卡池 ${gacha.name}（#${gacha.id}）的详情图`;
 }

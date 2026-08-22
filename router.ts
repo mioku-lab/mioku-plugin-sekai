@@ -1,5 +1,4 @@
 export type SekaiCommand =
-  | { type: "help" }
   | { type: "characters" }
   | { type: "character"; query: string }
   | { type: "card"; query: string }
@@ -25,17 +24,13 @@ export function parseSekaiCommand(text: string): SekaiCommand {
   const m = trimmed.match(PREFIX);
   if (!m) return { type: "none" };
   const rest = trimmed.slice(m[0].length).trim();
-  if (!rest || /^(帮助|help|ヘルプ)$/i.test(rest)) return { type: "help" };
+  if (!rest) return { type: "none" };
 
   const tokens = rest.split(/\s+/);
   const head = tokens[0].toLowerCase();
   const arg = tokens.slice(1).join(" ").trim();
 
   switch (head) {
-    case "帮助":
-    case "help":
-    case "ヘルプ":
-      return { type: "help" };
     case "角色列表":
     case "characters":
       return { type: "characters" };

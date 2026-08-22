@@ -48,91 +48,6 @@ function gachaLine(g: CompactGacha): string {
   return `#${g.id} ${g.name}（${normal}）`;
 }
 
-export function characterInfoTool(store: SekaiStore): AITool {
-  return {
-    name: "character_info",
-    description:
-      "查询《世界计划》角色信息，如生日、身高、CV、所属组合等。支持中文名、日文名、英文名或角色 id。",
-    parameters: {
-      type: "object",
-      properties: { name: { type: "string", description: "角色名称或 id" } },
-      required: ["name"],
-    },
-    handler: async (args: { name?: string }) => {
-      const query = String(args?.name ?? "").trim();
-      if (!query) return "请提供角色名称或 id";
-      const chars = await store.getCharacters();
-      const found = findById(chars, query) ?? rankMatches(chars, query, (c) => [
-        c.nameZh ?? "",
-        `${c.firstName ?? ""}${c.givenName ?? ""}`,
-        c.firstName ?? "",
-        c.givenName ?? "",
-        `${c.firstNameEn ?? ""} ${c.givenNameEn ?? ""}`.trim(),
-        c.firstNameEn ?? "",
-        c.givenNameEn ?? "",
-      ])[0];
-      if (!found) return `未找到角色「${query}」`;
-      const profiles = await store.getProfiles();
-      const profile = profiles.find((p) => p.characterId === found.id);
-      const lines = [
-        `${charName(found)}（${found.firstName} ${found.givenName} / ${found.firstNameEn} ${found.givenNameEn}）`,
-        `组合：${found.unitName ?? found.unit}`,
-        `id：${found.id}`,
-      ];
-      if (profile) {
-        lines.push(
-          `CV：${profile.voice}`,
-          `生日：${profile.birthday}`,
-          `身高：${profile.height}`,
-          `学校：${profile.school} ${profile.schoolYear}`,
-          `兴趣：${profile.hobby.replace(/\n/g, "、")}`,
-          `特长：${profile.specialSkill}`,
-          `喜欢的食物：${profile.favoriteFood}`,
-          `讨厌的食物：${profile.hatedFood}`,
-          `弱点：${profile.weak}`,
-          `简介：${profile.introduction}`,
-        );
-      }
-      return lines.join("\n");
-    },
-  } as AITool;
-}
-
-export function cardInfoTool(store: SekaiStore): AITool {
-  return {
-    name: "card_info",
-    description:
-      "查询《世界计划》卡牌信息，如稀有度、属性、技能、综合力、实装时间。支持中文卡名、日文卡名、角色名或卡牌 id（卡牌 id 与角色 id 不同，用 卡号 搜索时请带上数字）。",
-    parameters: {
-      type: "object",
-      properties: { query: { type: "string", description: "卡牌名称、角色名或卡牌 id" } },
-      required: ["query"],
-    },
-    handler: async (args: { query?: string }) => {
-      const query = String(args?.query ?? "").trim();
-      if (!query) return "请提供卡牌名称或 id";
-      const cards = await store.getCards();
-      const chars = await store.getCharacters();
-      const charMap = new Map(chars.map((c) => [c.id, c]));
-      const byId = findById(cards, query);
-      if (byId) {
-        return formatCardDetail(byId, charMap);
-      }
-      const matches = rankMatches(cards, query, (c) =>
-        cardSearchFields(c, charMap.get(c.characterId)),
-      );
-      if (!matches.length) return `未找到卡牌「${query}」`;
-      if (matches.length > 1) {
-        return `找到 ${matches.length} 张相关卡牌，请提供更精确的名称或卡牌 id：\n${matches
-          .slice(0, 8)
-          .map((c) => cardLine(c, charMap))
-          .join("\n")}`;
-      }
-      return formatCardDetail(matches[0], charMap);
-    },
-  } as AITool;
-}
-
 async function formatCardDetail(
   card: CompactCard,
   charMap: Map<number, CompactCharacter>,
@@ -150,128 +65,201 @@ async function formatCardDetail(
     .join("\n");
 }
 
-export function musicInfoTool(store: SekaiStore): AITool {
-  return {
-    name: "music_info",
-    description:
-      "查询《世界计划》乐曲信息，如作曲、作词、演唱者、各难度等级与 Note 数。支持中文曲名、日文曲名、英文曲名或乐曲 id。",
-    parameters: {
-      type: "object",
-      properties: { query: { type: "string", description: "乐曲名称或 id" } },
-      required: ["query"],
-    },
-    handler: async (args: { query?: string }) => {
-      const query = String(args?.query ?? "").trim();
-      if (!query) return "请提供乐曲名称或 id";
-      const musics = await store.getMusics();
-      const byId = findById(musics, query);
-      const matches = byId
-        ? [byId]
-        : rankMatches(musics, query, (m) => [m.titleZh ?? "", m.title, m.artist ?? ""]);
-      if (!matches.length) return `未找到乐曲「${query}」`;
-      if (matches.length > 1) {
-        return `找到 ${matches.length} 首相关乐曲：\n${matches
-          .slice(0, 8)
-          .map(musicLine)
-          .join("\n")}`;
-      }
-      const m = matches[0];
-      const diffs = m.difficulties
-        .map(
-          (d) =>
-            `  ${d.difficulty} LV${d.playLevel}（${d.totalNoteCount} notes）`,
-        )
-        .join("\n");
-      return [
-        `#${m.id} ${m.titleZh ?? m.title}${m.titleZh && m.titleZh !== m.title ? `（${m.title}）` : ""}`,
-        `作者：${m.artist ?? "-"}　作词：${m.lyricist || "-"}　作曲：${m.composer || "-"}　编曲：${m.arranger || "-"}`,
-        m.vocals?.length ? `演唱：${m.vocals.join("、")}` : "",
-        diffs ? `谱面：\n${diffs}` : "暂无谱面数据",
-      ]
-        .filter(Boolean)
-        .join("\n");
-    },
-  } as AITool;
+async function handleCharacterInfo(store: SekaiStore, raw: string): Promise<string> {
+  const query = raw.trim();
+  if (!query) return "请提供角色名称或 id";
+  const chars = await store.getCharacters();
+  const found = findById(chars, query) ?? rankMatches(chars, query, (c) => [
+    c.nameZh ?? "",
+    `${c.firstName ?? ""}${c.givenName ?? ""}`,
+    c.firstName ?? "",
+    c.givenName ?? "",
+    `${c.firstNameEn ?? ""} ${c.givenNameEn ?? ""}`.trim(),
+    c.firstNameEn ?? "",
+    c.givenNameEn ?? "",
+  ])[0];
+  if (!found) return `未找到角色「${query}」`;
+  const profiles = await store.getProfiles();
+  const profile = profiles.find((p) => p.characterId === found.id);
+  const lines = [
+    `${charName(found)}（${found.firstName} ${found.givenName} / ${found.firstNameEn} ${found.givenNameEn}）`,
+    `组合：${found.unitName ?? found.unit}`,
+    `id：${found.id}`,
+  ];
+  if (profile) {
+    lines.push(
+      `CV：${profile.voice}`,
+      `生日：${profile.birthday}`,
+      `身高：${profile.height}`,
+      `学校：${profile.school} ${profile.schoolYear}`,
+      `兴趣：${profile.hobby.replace(/\n/g, "、")}`,
+      `特长：${profile.specialSkill}`,
+      `喜欢的食物：${profile.favoriteFood}`,
+      `讨厌的食物：${profile.hatedFood}`,
+      `弱点：${profile.weak}`,
+      `简介：${profile.introduction}`,
+    );
+  }
+  return lines.join("\n");
 }
 
-export function eventInfoTool(store: SekaiStore): AITool {
+async function handleCardInfo(store: SekaiStore, raw: string): Promise<string> {
+  const query = raw.trim();
+  if (!query) return "请提供卡牌名称或 id";
+  const cards = await store.getCards();
+  const chars = await store.getCharacters();
+  const charMap = new Map(chars.map((c) => [c.id, c]));
+  const byId = findById(cards, query);
+  if (byId) {
+    return formatCardDetail(byId, charMap);
+  }
+  const matches = rankMatches(cards, query, (c) =>
+    cardSearchFields(c, charMap.get(c.characterId)),
+  );
+  if (!matches.length) return `未找到卡牌「${query}」`;
+  if (matches.length > 1) {
+    return `找到 ${matches.length} 张相关卡牌，请提供更精确的名称或卡牌 id：\n${matches
+      .slice(0, 8)
+      .map((c) => cardLine(c, charMap))
+      .join("\n")}`;
+  }
+  return formatCardDetail(matches[0], charMap);
+}
+
+async function handleMusicInfo(store: SekaiStore, raw: string): Promise<string> {
+  const query = raw.trim();
+  if (!query) return "请提供乐曲名称或 id";
+  const musics = await store.getMusics();
+  const byId = findById(musics, query);
+  const matches = byId
+    ? [byId]
+    : rankMatches(musics, query, (m) => [m.titleZh ?? "", m.title, m.artist ?? ""]);
+  if (!matches.length) return `未找到乐曲「${query}」`;
+  if (matches.length > 1) {
+    return `找到 ${matches.length} 首相关乐曲：\n${matches
+      .slice(0, 8)
+      .map(musicLine)
+      .join("\n")}`;
+  }
+  const m = matches[0];
+  const diffs = m.difficulties
+    .map(
+      (d) => `  ${d.difficulty} LV${d.playLevel}（${d.totalNoteCount} notes）`,
+    )
+    .join("\n");
+  return [
+    `#${m.id} ${m.titleZh ?? m.title}${m.titleZh && m.titleZh !== m.title ? `（${m.title}）` : ""}`,
+    `作者：${m.artist ?? "-"}　作词：${m.lyricist || "-"}　作曲：${m.composer || "-"}　编曲：${m.arranger || "-"}`,
+    m.vocals?.length ? `演唱：${m.vocals.join("、")}` : "",
+    diffs ? `谱面：\n${diffs}` : "暂无谱面数据",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+async function handleEventInfo(
+  store: SekaiStore,
+  scope: string | undefined,
+): Promise<string> {
+  const events = await store.getEvents();
+  const now = Date.now();
+  const sorted = [...events].sort((a, b) => b.id - a.id);
+  const which = scope ?? "current";
+  if (which === "recent") {
+    return sorted
+      .slice(0, 5)
+      .map(eventLine)
+      .join("\n");
+  }
+  if (which === "latest") {
+    const latest = sorted.find((e) => e.distributionEndAt < now) ?? sorted[0];
+    return latest ? eventLine(latest) : "暂无活动数据";
+  }
+  const current =
+    sorted.find((e) => e.startAt <= now && e.distributionEndAt >= now) ??
+    sorted[0];
+  if (!current) return "暂无活动数据";
+  const e = current;
+  return [
+    eventLine(e),
+    `开始：${new Date(e.startAt).toLocaleString()}`,
+    `结算：${new Date(e.aggregateAt).toLocaleString()}`,
+    `排行公布：${new Date(e.rankingAnnounceAt).toLocaleString()}`,
+    `奖励分发截止：${new Date(e.distributionEndAt).toLocaleString()}`,
+  ].join("\n");
+}
+
+async function handleGachaInfo(store: SekaiStore): Promise<string> {
+  const gachas = await store.getGachas();
+  const gacha = pickActiveGacha(gachas);
+  if (!gacha) return "暂无卡池数据";
+  const cards = await store.getCards();
+  const cardById = new Map(cards.map((c) => [c.id, c]));
+  const chars = await store.getCharacters();
+  const charMap = new Map(chars.map((c) => [c.id, c]));
+  const up = [...gacha.cards]
+    .sort((a, b) => Number(b.isWish) - Number(a.isWish))
+    .slice(0, 6)
+    .map((e) => cardById.get(e.cardId))
+    .filter(Boolean)
+    .map((c) => cardLine(c as CompactCard, charMap));
+  return [
+    gachaLine(gacha),
+    `时间：${new Date(gacha.startAt).toLocaleString()} ~ ${new Date(gacha.endAt).toLocaleString()}`,
+    up.length ? `UP 卡池：\n${up.join("\n")}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+export function infoTool(store: SekaiStore): AITool {
   return {
-    name: "event_info",
+    name: "info",
     description:
-      "查询《世界计划》活动信息：当前进行中的活动（默认），或最近结束的活动（scope=latest），或最近 N 期活动列表（scope=recent）。",
+      "查询《世界计划》（PJSK）游戏数据。按 type 选择查询类型：\n- character：角色详情（生日/身高/CV/组合/简介），按 query（中/日/英文名或角色 id）\n- card：卡牌详情（稀有度/属性/技能/综合力/实装时间/卡面），按 query（卡名/角色名/卡号）\n- music：乐曲详情（作者/作词/编曲/演唱者/全难度等级与 Note 数），按 query（曲名或乐曲 id）\n- event：活动，scope=current（当前进行中，默认）/latest（最近一期）/recent（最近 5 期列表）\n- gacha：当前卡池信息（概率/UP 卡池），无需其他参数",
     parameters: {
       type: "object",
       properties: {
+        type: {
+          type: "string",
+          enum: ["character", "card", "music", "event", "gacha"],
+          description: "查询类型",
+        },
+        query: {
+          type: "string",
+          description: "查询关键字，type=character / card / music 时使用",
+        },
         scope: {
           type: "string",
           enum: ["current", "latest", "recent"],
-          description: "current=当前进行中，latest=最近一期，recent=最近 5 期列表",
+          description: "活动查询范围，仅 type=event 时使用，默认 current",
         },
       },
-      required: [],
+      required: ["type"],
     },
-    handler: async (args: { scope?: string }) => {
-      const events = await store.getEvents();
-      const now = Date.now();
-      const sorted = [...events].sort((a, b) => b.id - a.id);
-      const scope = args?.scope ?? "current";
-      if (scope === "recent") {
-        return sorted
-          .slice(0, 5)
-          .map(eventLine)
-          .join("\n");
+    handler: async (args: {
+      type?: string;
+      query?: string;
+      scope?: string;
+    }) => {
+      const type = args?.type;
+      if (!type) {
+        return "缺少 type 参数，可选：character / card / music / event / gacha";
       }
-      if (scope === "latest") {
-        const latest = sorted.find((e) => e.distributionEndAt < now) ?? sorted[0];
-        return latest ? eventLine(latest) : "暂无活动数据";
+      switch (type) {
+        case "character":
+          return handleCharacterInfo(store, String(args.query ?? ""));
+        case "card":
+          return handleCardInfo(store, String(args.query ?? ""));
+        case "music":
+          return handleMusicInfo(store, String(args.query ?? ""));
+        case "event":
+          return handleEventInfo(store, args.scope);
+        case "gacha":
+          return handleGachaInfo(store);
+        default:
+          return `未知查询类型 ${type}，可选：character / card / music / event / gacha`;
       }
-      const current =
-        sorted.find((e) => e.startAt <= now && e.distributionEndAt >= now) ??
-        sorted[0];
-      if (!current) return "暂无活动数据";
-      const e = current;
-      return [
-        eventLine(e),
-        `开始：${new Date(e.startAt).toLocaleString()}`,
-        `结算：${new Date(e.aggregateAt).toLocaleString()}`,
-        `排行公布：${new Date(e.rankingAnnounceAt).toLocaleString()}`,
-        `奖励分发截止：${new Date(e.distributionEndAt).toLocaleString()}`,
-      ].join("\n");
-    },
-  } as AITool;
-}
-
-export function gachaInfoTool(store: SekaiStore): AITool {
-  return {
-    name: "gacha_info",
-    description:
-      "查询《世界计划》当前进行中的卡池信息，包括概率与卡池范围；无进行中卡池时返回最近结束的卡池。",
-    parameters: {
-      type: "object",
-      properties: {},
-      required: [],
-    },
-    handler: async () => {
-      const gachas = await store.getGachas();
-      const gacha = pickActiveGacha(gachas);
-      if (!gacha) return "暂无卡池数据";
-      const cards = await store.getCards();
-      const cardById = new Map(cards.map((c) => [c.id, c]));
-      const chars = await store.getCharacters();
-      const charMap = new Map(chars.map((c) => [c.id, c]));
-      const up = [...gacha.cards]
-        .sort((a, b) => Number(b.isWish) - Number(a.isWish))
-        .slice(0, 6)
-        .map((e) => cardById.get(e.cardId))
-        .filter(Boolean)
-        .map((c) => cardLine(c as CompactCard, charMap));
-      return [
-        gachaLine(gacha),
-        `时间：${new Date(gacha.startAt).toLocaleString()} ~ ${new Date(gacha.endAt).toLocaleString()}`,
-        up.length ? `UP 卡池：\n${up.join("\n")}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n");
     },
   } as AITool;
 }

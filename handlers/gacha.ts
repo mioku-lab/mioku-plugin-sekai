@@ -4,7 +4,7 @@ import { renderToImage } from "../render";
 import { replyImage, replyText } from "../utils";
 import type { HandlerContext } from "./types";
 
-export async function handleRoll(h: HandlerContext, requested: number): Promise<void> {
+export async function handleRoll(h: HandlerContext, requested: number): Promise<string> {
   const config = h.getConfig();
   const pulls =
     requested > 0 ? Math.min(requested, config.maxPulls) : config.defaultPulls;
@@ -13,7 +13,7 @@ export async function handleRoll(h: HandlerContext, requested: number): Promise<
   const gacha = pickActiveGacha(gachas);
   if (!gacha) {
     await replyText(h.ctx, h.event, "暂无卡池数据，无法模拟抽卡");
-    return;
+    return "暂无卡池数据，无法模拟抽卡";
   }
 
   const [cards, chars] = await Promise.all([
@@ -26,7 +26,7 @@ export async function handleRoll(h: HandlerContext, requested: number): Promise<
   const pulled = simulateGacha(gacha, cardById, cards, pulls);
   if (!pulled.length) {
     await replyText(h.ctx, h.event, "抽卡失败：卡池为空");
-    return;
+    return "卡池为空，抽卡失败";
   }
   const counts = countRarities(pulled);
   const stat = Object.entries(counts)
@@ -41,7 +41,7 @@ export async function handleRoll(h: HandlerContext, requested: number): Promise<
     );
     const imagePath = await renderToImage(h.screenshot, html, config.imageWidth);
     await replyImage(h.ctx, h.event, imagePath, `【${gacha.name}】${stat}　共${pulls}抽`);
-    return;
+    return `已为用户发送 ${gacha.name} 的 ${pulls} 抽结果图（${stat}）`;
   }
 
   const top = pulled
@@ -59,4 +59,5 @@ export async function handleRoll(h: HandlerContext, requested: number): Promise<
     );
   }
   await replyText(h.ctx, h.event, lines.join("\n"));
+  return `已为用户发送 ${gacha.name} 的 ${pulls} 抽结果文字（${stat}）`;
 }
