@@ -70,7 +70,7 @@ export function renderCharacterDetail(
     QUOTE: esc(profile?.introduction?.split(/[。！？]/)[0] || "一起去创造属于我们的舞台吧"),
   });
 
-  return htmlShell(body, { title: charFullName(character), kind: "landscape", ratio: 0.8, renderWidth: 1402 });
+  return htmlShell(body, { title: charFullName(character), kind: "portrait", ratio: 0.95, renderWidth: 1000, className: "character-detail-scene" });
 }
 
 export function renderCharacterList(
