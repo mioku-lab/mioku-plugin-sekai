@@ -5,5 +5,7 @@ export async function renderToImage(
   html: string,
   width = 900,
 ): Promise<string> {
-  return screenshot.screenshot(html, { width, fullPage: true, type: "png" });
+  const ratio = Number(/data-height-ratio="([\d.]+)"/.exec(html)?.[1]);
+  const height = Number.isFinite(ratio) && ratio > 0 ? Math.round(width * ratio) : undefined;
+  return screenshot.screenshot(html, { width, height, fullPage: true, type: "png" });
 }

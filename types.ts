@@ -5,7 +5,7 @@ export type CardRarity =
   | "rarity_4"
   | "rarity_birthday";
 
-export type CardAttr = "cute" | "cool" | "pure" | "happy";
+export type CardAttr = "cute" | "cool" | "pure" | "happy" | "mysterious";
 
 export type MusicDifficulty =
   | "easy"

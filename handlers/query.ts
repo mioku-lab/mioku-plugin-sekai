@@ -48,9 +48,12 @@ export async function handleCharacter(h: HandlerContext, query: string): Promise
     await replyText(h.ctx, h.event, `没有找到角色「${query}」，试试 pj角色列表 看看全部角色`);
     return `未找到角色 ${query}`;
   }
-  const profiles = await h.store.getProfiles();
+  const [profiles, cards] = await Promise.all([h.store.getProfiles(), h.store.getCards()]);
   const profile = profiles.find((p) => p.characterId === found.id);
-  await renderAndReply(h, renderCharacterDetail(found, profile));
+  const showcaseCard = cards
+    .filter((card) => card.characterId === found.id)
+    .sort((a, b) => Number(b.rarity === "rarity_4") - Number(a.rarity === "rarity_4") || b.id - a.id)[0];
+  await renderAndReply(h, renderCharacterDetail(found, profile, showcaseCard));
   return `已为用户发送角色 ${charFullName(found)} 的详情图`;
 }
 

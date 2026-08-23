@@ -1,91 +1,67 @@
 import type { CompactEvent } from "../types";
 import { eventImageUrl } from "../data/sources";
-import {
-  EVENT_TYPE_NAME,
-  badge,
-  esc,
-  fmtDate,
-  head,
-  htmlShell,
-  kv,
-  panel,
-  timeRange,
-} from "./theme";
+import { EVENT_TYPE_NAME, badge, esc, fmtDate, head, htmlShell, panel, timeRange } from "./theme";
 
-export function renderEventDetail(event: CompactEvent, now = Date.now()): string {
-  const typeName = EVENT_TYPE_NAME[event.eventType] ?? event.eventType;
-  const status =
-    now < event.startAt
-      ? badge("未开始", "#8fa3b8")
-      : now <= event.distributionEndAt
-        ? badge("进行中", "#42c6b6")
-        : badge("已结束", "#6f768c");
-  const ranges = (event.eventRankingRewardRanges ?? [])
+function status(event: CompactEvent, now: number): string {
+  if (now < event.startAt) return badge("未开始", "rgba(127, 157, 221, .76)");
+  if (now <= event.distributionEndAt) return badge("进行中", "rgba(30, 198, 173, .86)");
+  return badge("已结束", "rgba(90, 111, 177, .74)");
+}
+
+function eventType(event: CompactEvent): string {
+  return EVENT_TYPE_NAME[event.eventType] ?? event.eventType;
+}
+
+function rankingRanges(event: CompactEvent): string {
+  return (event.eventRankingRewardRanges ?? [])
     .map((r) => `${r.fromRank}${r.fromRank !== r.toRank ? `~${r.toRank}` : ""}位`)
     .join("、");
+}
 
+export function renderEventDetail(event: CompactEvent, now = Date.now()): string {
+  const image = event.assetbundleName ? eventImageUrl(event.assetbundleName) : "";
+  const ranges = rankingRanges(event);
   const body = `
-    ${head(event.nameZh ?? event.name, `Event #${event.id}`)}
-    ${event.nameZh && event.nameZh !== event.name ? `<div class="name-ja" style="margin-bottom:12px">${esc(event.name)}</div>` : ""}
-    <div class="panel">
-      <div class="row">
-        ${badge(esc(typeName), "#7f9cf5")}
-        ${status}
-      </div>
+    <div class="event-detail-head"><div class="brand-mark">HATSUNE MIKU: COLORFUL STAGE!</div><span>EVENT #${event.id}</span></div>
+    <div class="event-detail-layout">
+      <section class="event-copy">
+        <div class="eyebrow">${esc(eventType(event))}</div>
+        <h1 class="event-title">${esc(event.nameZh ?? event.name)}</h1>
+        ${event.nameZh && event.nameZh !== event.name ? `<div class="event-japanese">${esc(event.name)}</div>` : ""}
+        <div class="event-badges">${badge(eventType(event), "rgba(113, 92, 211, .8)")} ${status(event, now)}</div>
+        <div class="event-timeline glass-soft">
+          <div class="timeline-title">时间</div>
+          ${[
+            ["开始", event.startAt],
+            ["结算", event.aggregateAt],
+            ["排行公布", event.rankingAnnounceAt],
+            ["奖励发放", event.distributionStartAt],
+            ["奖励截止", event.distributionEndAt],
+            ["活动关闭", event.closedAt],
+          ].map(([key, value]) => `<div class="timeline-row"><span>${esc(key as string)}</span><b>${value ? fmtDate(value as number) : "-"}</b></div>`).join("")}
+          <div class="timeline-range">${esc(timeRange(event.startAt, event.distributionEndAt))}</div>
+        </div>
+      </section>
+      <div class="event-visual glass"><img class="img-cover" src="${image}" alt="${esc(event.nameZh ?? event.name)}" onerror="this.style.opacity='.2'"/></div>
     </div>
-    ${
-      event.assetbundleName
-        ? `<div class="panel" style="padding:8px">
-            <img src="${eventImageUrl(event.assetbundleName)}" style="width:100%;border-radius:10px;display:block"/>
-          </div>`
-        : ""
-    }
-    <div class="panel">
-      <h3>时间</h3>
-      <div class="row">
-        ${kv("开始", fmtDate(event.startAt))}
-        ${kv("结算", fmtDate(event.aggregateAt))}
-        ${kv("排行公布", fmtDate(event.rankingAnnounceAt))}
-        ${kv("奖励发放", event.distributionStartAt ? fmtDate(event.distributionStartAt) : "-")}
-        ${kv("奖励分发截止", fmtDate(event.distributionEndAt))}
-        ${kv("活动关闭", event.closedAt ? fmtDate(event.closedAt) : "-")}
-      </div>
-      <div class="hr"></div>
-      <div class="muted">${esc(timeRange(event.startAt, event.distributionEndAt))}</div>
-    </div>
-    ${
-      ranges
-        ? panel("排名奖励档位", `<div class="muted" style="font-size:12px;line-height:2">${esc(ranges)}</div>`)
-        : ""
-    }`;
+    ${panel("排名奖励档位", `<p class="ranking-copy">${esc(ranges || "暂无排名奖励数据")}</p>`, "glass ranking-panel")}
+    <div class="footer-note">✦ EVENT ARCHIVE · ${esc(event.unit)} ✦</div>`;
 
-  return htmlShell(body);
+  return htmlShell(body, { title: event.nameZh ?? event.name, kind: "landscape", ratio: 0.6 });
 }
 
 export function renderEventList(events: CompactEvent[]): string {
   const body = `
-    ${head("最近活动", `${events.length} 期`)}
-    ${events
-      .map(
-        (e) => `
-      <div class="panel" style="display:flex;align-items:center;gap:14px">
-        ${
-          e.assetbundleName
-            ? `<img src="${eventImageUrl(e.assetbundleName)}" style="width:150px;height:84px;border-radius:10px;object-fit:cover;flex-shrink:0"
-                onerror="this.style.display='none'"/>`
-            : ""
-        }
-        <div style="flex:1">
-          <div class="name-zh" style="font-size:16px">${esc(e.nameZh ?? e.name)}</div>
-          ${e.nameZh && e.nameZh !== e.name ? `<div class="name-ja" style="font-size:12px">${esc(e.name)}</div>` : ""}
-          <div class="muted" style="margin-top:4px">#${e.id} · ${esc(EVENT_TYPE_NAME[e.eventType] ?? e.eventType)}</div>
-        </div>
-        <div class="muted" style="text-align:right;font-size:12px;line-height:1.7">${esc(
-          fmtDate(e.startAt),
-        )}<br/>${esc(fmtDate(e.distributionEndAt))}</div>
-      </div>`,
-      )
-      .join("")}`;
+    ${head("最近活动", `${events.length} EVENTS`)}
+    <div class="event-list">
+      ${events.map((event) => `
+        <article class="event-list-item glass-soft">
+          <div class="event-list-image">${event.assetbundleName ? `<img class="img-cover" src="${eventImageUrl(event.assetbundleName)}" alt="" onerror="this.style.opacity='.2'"/>` : ""}</div>
+          <div class="event-list-copy"><h2>${esc(event.nameZh ?? event.name)}</h2><p>#${event.id} · ${esc(eventType(event))}</p></div>
+          <div class="event-list-time"><b>${esc(fmtDate(event.startAt))}</b><span>✦</span><b>${esc(fmtDate(event.distributionEndAt))}</b></div>
+        </article>`).join("")}
+    </div>
+    <div class="footer-note">✦ PROJECT SEKAI · EVENT ARCHIVE ✦</div>`;
 
-  return htmlShell(body);
+  return htmlShell(body, { title: "最近活动", kind: "portrait", ratio: 1.27 });
 }

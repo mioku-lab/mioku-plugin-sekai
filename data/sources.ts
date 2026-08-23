@@ -106,6 +106,14 @@ export function characterIconUrl(fileName: string): string {
   return `${ASSET_BASE}/custom_profile/character_icon/${fileName}.webp`;
 }
 
+export function characterFullUrl(modelName: string): string {
+  const id = Number(/^\d+/.exec(modelName)?.[0]);
+  if (Number.isFinite(id) && id > 0) {
+    return `${ASSET_BASE}/character/character_select/chr_tl_${id}.webp`;
+  }
+  return `${ASSET_BASE}/character/character/${modelName}/character_full.png`;
+}
+
 export function eventImageUrl(assetbundleName: string): string {
   return `${ASSET_BASE}/event/${assetbundleName}/screen/bg.webp`;
 }
