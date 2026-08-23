@@ -54,11 +54,6 @@ fields:
     type: switch
     description: 抽卡结果与卡池页面中，有特训卡面的卡牌是否展示特训后立绘。
 
-  - key: base.imageWidth
-    label: 渲染图片宽度
-    type: number
-    description: 查询结果图片的渲染宽度（像素），越大图片越清晰。
-    placeholder: 900
 ---
 
 ```mioku-fields
@@ -72,5 +67,4 @@ keys:
   - base.defaultPulls
   - base.maxPulls
   - base.showTrained
-  - base.imageWidth
 ```

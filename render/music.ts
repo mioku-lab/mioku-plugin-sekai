@@ -31,5 +31,5 @@ export function renderMusicDetail(music: CompactMusic): string {
     </section>
     <div class="footer-note">✦ MUSIC ARCHIVE · ${esc(music.artist ?? "Project Sekai")}</div>`;
 
-  return htmlShell(body, { title: music.titleZh ?? music.title, kind: "landscape", ratio: 0.8 });
+  return htmlShell(body, { title: music.titleZh ?? music.title, kind: "landscape", ratio: 0.8, renderWidth: 1402 });
 }

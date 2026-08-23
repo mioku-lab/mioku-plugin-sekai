@@ -18,7 +18,7 @@ function requireScreenshot(h: HandlerContext): boolean {
 
 async function renderAndReply(h: HandlerContext, html: string): Promise<void> {
   if (!requireScreenshot(h)) return;
-  const imagePath = await renderToImage(h.screenshot!, html, h.getConfig().imageWidth);
+  const imagePath = await renderToImage(h.screenshot!, html);
   await replyImage(h.ctx, h.event, imagePath);
 }
 

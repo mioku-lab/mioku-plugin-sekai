@@ -77,7 +77,7 @@ export function renderCharacterDetail(
     </div>
     <div class="footer-note">✦ HATSUNE MIKU: COLORFUL STAGE! · CHARACTER ARCHIVE ✦</div>`;
 
-  return htmlShell(body, { title: charFullName(character), kind: "landscape", ratio: 0.8 });
+  return htmlShell(body, { title: charFullName(character), kind: "landscape", ratio: 0.8, renderWidth: 1402 });
 }
 
 export function renderCharacterList(
@@ -117,5 +117,5 @@ export function renderCharacterList(
     </div>
     <div class="footer-note">✦ 点击角色卡片可查看详细资料 · PROJECT SEKAI ✦</div>`;
 
-  return htmlShell(body, { title: "角色列表", kind: "portrait", ratio: 1.53 });
+  return htmlShell(body, { title: "角色列表", kind: "portrait", ratio: 1.53, renderWidth: 1014 });
 }

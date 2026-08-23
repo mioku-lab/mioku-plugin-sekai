@@ -268,11 +268,103 @@ const CSS = (width: number, kind: SceneKind, minHeightRatio: number) => `
   .event-badges { display: flex; gap: 8px; margin-top: 20px; }
   .event-timeline { max-width: 500px; margin-top: 38px; padding: 15px 17px; }
   .timeline-title { margin-bottom: 8px; color: #526bd2; font-size: 12px; font-weight: 800; }
-  .timeline-row { display: grid; grid-template-columns: 80px 1fr; gap: 12px; padding: 5px 0; color: #6378b0; font-size: 11px; }
-  .timeline-row b { color: #344d99; font-weight: 700; }
+  .timeline-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 28px; }
+  .timeline-cell { display: grid; grid-template-columns: max-content 1fr; gap: 12px; align-items: baseline; color: #6378b0; font-size: 11px; }
+  .timeline-cell b { color: #344d99; font-weight: 700; }
   .timeline-range { margin-top: 8px; padding-top: 9px; border-top: 1px solid rgba(86,112,203,.25); color: #5269a5; font-size: 11px; }
   .event-visual { min-width: 0; min-height: 0; aspect-ratio: 1.63 / 1; overflow: hidden; padding: 9px; }
   .event-visual img { border-radius: 18px; }
+  .event-detail-scene {
+    min-height: calc(100vw * .6);
+    padding: 5.25vw 3% 2.5vw 4.6%;
+  }
+  .event-detail-scene .event-detail-head {
+    position: absolute;
+    top: 4.75vw;
+    right: 4.6%;
+    left: 6.1%;
+    z-index: 2;
+    margin: 0;
+  }
+  .event-detail-scene .event-detail-head .brand-mark::before { display: none; }
+  .event-detail-scene .event-detail-layout {
+    grid-template-columns: 34.5% minmax(0, 1fr);
+    gap: 2.2%;
+    align-items: start;
+  }
+  .event-detail-scene .event-copy { padding: 3.2vw 1.25vw 0; }
+  .event-detail-scene .event-title {
+    max-width: 500px;
+    margin: 0;
+    color: #fff;
+    font-family: "Bodoni 72", Didot, Georgia, "Songti SC", serif;
+    font-size: 4.5vw;
+    line-height: 1.05;
+    letter-spacing: -.035em;
+    text-shadow: 0 4px 18px rgba(46, 71, 155, .28);
+  }
+  .event-detail-scene .event-japanese { margin-top: .75vw; color: rgba(240, 247, 255, .74); }
+  .event-detail-scene .event-badges { align-items: center; margin-top: 2.8vw; padding-left: 4.125vw; }
+  .event-detail-scene .event-badges .badge { padding: .44vw .94vw; font-size: .8125vw; }
+  .event-detail-scene .event-id {
+    margin-left: auto;
+    color: rgba(245, 249, 255, .78);
+    font-size: .875vw;
+    letter-spacing: .03em;
+    white-space: nowrap;
+  }
+  .event-detail-scene .event-timeline {
+    width: calc(100% + 2.5vw);
+    max-width: none;
+    margin-top: 8vw;
+    margin-left: -1.25vw;
+    padding: 1.125vw 1.7vw .94vw;
+    color: rgba(255, 255, 255, .9);
+    background: linear-gradient(135deg, rgba(77, 129, 226, .2), rgba(34, 79, 184, .13));
+    border: 1px solid rgba(255, 255, 255, .56);
+    border-radius: 1.3vw;
+    box-shadow: 0 14px 34px rgba(30, 64, 149, .15), inset 0 1px 0 rgba(255, 255, 255, .5);
+    backdrop-filter: blur(21px) saturate(145%);
+  }
+  .event-detail-scene .timeline-title,
+  .event-detail-scene .timeline-cell,
+  .event-detail-scene .timeline-cell b,
+  .event-detail-scene .timeline-range { color: rgba(255, 255, 255, .88); }
+  .event-detail-scene .timeline-title { margin-bottom: .75vw; font-size: .8125vw; }
+  .event-detail-scene .timeline-grid { gap: .625vw 1.8vw; }
+  .event-detail-scene .timeline-cell { grid-template-columns: max-content 1fr; gap: .875vw; font-size: .75vw; }
+  .event-detail-scene .timeline-cell span { min-width: 3.25vw; }
+  .event-detail-scene .timeline-cell b { font-weight: 600; white-space: nowrap; }
+  .event-detail-scene .timeline-range {
+    margin-top: .875vw;
+    padding-top: .7vw;
+    border-color: rgba(255, 255, 255, .32);
+    font-size: .75vw;
+  }
+  .event-detail-scene .event-visual {
+    width: 100%;
+    aspect-ratio: 1.63 / 1;
+    padding: .625vw;
+    background: rgba(247, 251, 255, .27);
+    border: 1px solid rgba(255, 255, 255, .7);
+    border-radius: 1.5vw;
+    box-shadow: 0 17px 37px rgba(32, 64, 145, .2), inset 0 1px 0 rgba(255, 255, 255, .66);
+    backdrop-filter: blur(20px) saturate(135%);
+  }
+  .event-detail-scene .event-visual img { border-radius: 1.125vw; }
+  .event-detail-scene .ranking-panel {
+    margin-top: 1.5vw;
+    padding: 1.125vw 1.75vw .94vw !important;
+    color: rgba(255, 255, 255, .9);
+    background: linear-gradient(135deg, rgba(68, 111, 209, .22), rgba(45, 88, 189, .14));
+    border: 1px solid rgba(255, 255, 255, .5);
+    border-radius: 1.3vw;
+    box-shadow: 0 13px 30px rgba(34, 67, 150, .14), inset 0 1px 0 rgba(255, 255, 255, .52);
+    backdrop-filter: blur(21px) saturate(145%);
+  }
+  .event-detail-scene .ranking-panel .section-title { color: rgba(255, 255, 255, .92); }
+  .event-detail-scene .ranking-copy { max-width: 81.25vw; margin-top: .875vw; color: rgba(245, 249, 255, .84); font-size: .875vw; line-height: 1.7; }
+  .event-detail-scene .footer-note { display: none; }
   .ranking-panel { margin-top: 19px; padding: 17px 22px !important; }
   .ranking-panel .section-title { font-size: 14px; }
   .ranking-copy { margin-top: 13px; color: var(--ink-soft); font-size: 12px; line-height: 2; }
@@ -310,6 +402,155 @@ const CSS = (width: number, kind: SceneKind, minHeightRatio: number) => `
   .gacha-card-copy b { color: var(--rarity-color); font-size: 12px; }
   .gacha-card-copy span { margin-top: 4px; color: #fff; font-size: 10px; }
   .gacha-card-copy small { margin-top: 3px; color: var(--ink-muted); font-size: 9px; }
+  .gacha-detail-scene {
+    min-height: calc(100vw * .666667);
+    padding: 5.55vw 0 2.6vw;
+  }
+  .gacha-detail-mark {
+    position: absolute;
+    top: 3.2vw;
+    left: 3.7vw;
+    z-index: 2;
+    min-height: 4.8vw;
+  }
+  .gacha-logo {
+    display: block;
+    width: 11.5vw;
+    max-height: 5.6vw;
+    object-fit: contain;
+    object-position: left center;
+  }
+  .gacha-detail-mark > span { display: none; }
+  .gacha-detail-frame {
+    width: 89.3%;
+    height: 53.85vw;
+    margin: 0 0 0 5.9%;
+    padding: 5.55vw 7.35vw 2.8vw;
+    overflow: hidden;
+    color: #344b98;
+    background: linear-gradient(135deg, rgba(240, 248, 255, .22), rgba(179, 210, 255, .13));
+    border: 1px solid rgba(255, 255, 255, .68);
+    border-radius: 2.1vw;
+    box-shadow: 0 17px 44px rgba(35, 68, 151, .18), inset 0 1px 0 rgba(255, 255, 255, .66);
+    backdrop-filter: blur(19px) saturate(142%);
+  }
+  .gacha-detail-layout {
+    display: grid;
+    grid-template-columns: 43% 45.5%;
+    gap: 6%;
+    min-height: 100%;
+  }
+  .gacha-detail-scene .gacha-copy { min-width: 0; }
+  .gacha-detail-scene .gacha-title {
+    min-height: 8.5vw;
+    max-width: 34vw;
+    margin: 0 0 1.8vw;
+    color: #3e47aa;
+    font-family: "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 3.2vw;
+    line-height: .99;
+    font-weight: 900;
+    letter-spacing: .015em;
+    text-shadow: 0 2px 8px rgba(75, 79, 184, .17);
+  }
+  .gacha-meta-card {
+    display: grid;
+    grid-template-columns: .42fr 1fr;
+    align-items: center;
+    min-height: 5.3vw;
+    padding: 1.25vw 1.4vw;
+    background: rgba(239, 247, 255, .34);
+    border: 1px solid rgba(255, 255, 255, .55);
+    border-radius: 1vw;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.54);
+    backdrop-filter: blur(17px) saturate(135%);
+  }
+  .gacha-meta-item { display: grid; grid-template-columns: max-content 1fr; gap: 1.2vw; align-items: baseline; min-width: 0; }
+  .gacha-meta-item span { color: #6379b4; font-size: .8vw; font-weight: 700; white-space: nowrap; }
+  .gacha-meta-item b { overflow: hidden; color: #384b91; font-size: .9vw; text-overflow: ellipsis; white-space: nowrap; }
+  .gacha-detail-scene .gacha-rate-card {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    align-items: center;
+    min-height: 4.65vw;
+    margin-top: .7vw;
+    padding: .95vw 1.4vw;
+    background: rgba(239, 247, 255, .34);
+    border: 1px solid rgba(255, 255, 255, .55);
+    border-radius: 1vw;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.54);
+    backdrop-filter: blur(17px) saturate(135%);
+  }
+  .gacha-detail-scene .rate-heading { color: #5268aa; font-size: .8vw; font-weight: 800; white-space: nowrap; }
+  .gacha-detail-scene .rate-row { display: flex; flex-wrap: wrap; align-items: center; gap: 1.25vw; margin: 0 0 0 2.2vw; color: #3d559a; font-size: 1vw; }
+  .gacha-detail-scene .rate-row + .rate-row { grid-column: 1 / -1; margin: .35vw 0 0; padding-top: .35vw; border-top: 1px solid rgba(93, 118, 201, .16); }
+  .gacha-detail-scene .rate-label { color: #6379b4; font-size: .75vw; }
+  .gacha-detail-scene .rate-item { white-space: nowrap; }
+  .gacha-detail-scene .rate-item b { font-size: 1vw; }
+  .gacha-detail-scene .gacha-tags { display: flex; flex-wrap: wrap; gap: .45vw; margin-top: 1.55vw; }
+  .gacha-detail-scene .gacha-tags .badge { padding: .4vw .85vw; font-size: .75vw; }
+  .gacha-detail-scene .gacha-information {
+    height: 14vw;
+    min-height: 0;
+    margin-top: 1vw;
+    padding: 1.55vw 1.6vw;
+    overflow: hidden;
+    color: #4e64a9;
+    background: rgba(241, 248, 255, .33);
+    border: 1px solid rgba(255, 255, 255, .5);
+    border-radius: 1vw;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.54);
+    backdrop-filter: blur(17px) saturate(135%);
+  }
+  .gacha-information-title {
+    display: inline-flex;
+    padding: .35vw 1.1vw;
+    color: #fff;
+    background: linear-gradient(100deg, #6870cb, #7776d4);
+    border-radius: 999px;
+    font-size: .8vw;
+    font-weight: 800;
+    letter-spacing: .04em;
+  }
+  .gacha-detail-scene .gacha-information p { margin-top: 1.05vw; color: #5268a9; font-size: .78vw; line-height: 1.85; white-space: pre-wrap; }
+  .gacha-showcase { min-width: 0; padding-top: 2.85vw; }
+  .gacha-feature-card,
+  .gacha-feature-fallback {
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+    aspect-ratio: 1.47 / 1;
+    border: 2px solid color-mix(in srgb, var(--rarity-color, #f36eaa) 70%, white);
+    border-radius: 1.2vw;
+    background: rgba(255,255,255,.31);
+    box-shadow: 0 12px 28px rgba(72, 64, 159, .18), inset 0 1px 0 rgba(255,255,255,.7);
+  }
+  .gacha-feature-art { height: 72%; background: rgba(255,255,255,.26); }
+  .gacha-feature-art img { width: 100%; height: 100%; display: block; object-fit: cover; }
+  .gacha-feature-copy {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    min-height: 28%;
+    padding: 1.05vw 1.25vw .85vw;
+    color: #fff;
+    background: linear-gradient(180deg, rgba(29, 32, 91, .7), rgba(24, 25, 78, .94));
+  }
+  .gacha-feature-copy b, .gacha-feature-copy strong, .gacha-feature-copy span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gacha-feature-copy b { color: #ff9aca; font-size: .95vw; }
+  .gacha-feature-copy strong { margin-top: .3vw; font-size: 1.15vw; font-weight: 800; }
+  .gacha-feature-copy span { margin-top: .25vw; color: rgba(245, 244, 255, .82); font-size: .75vw; }
+  .gacha-feature-fallback .gacha-banner { width: 100%; height: 100%; object-fit: cover; }
+  .gacha-pickup-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .9vw; margin-top: 1.15vw; }
+  .gacha-detail-scene .gacha-pickup-grid .gacha-card { min-width: 0; border-radius: .85vw; }
+  .gacha-detail-scene .gacha-pickup-grid .gacha-card-art { height: 5.8vw; }
+  .gacha-detail-scene .gacha-pickup-grid .gacha-card-copy { min-height: 4.9vw; padding: .65vw .7vw .7vw; }
+  .gacha-detail-scene .gacha-pickup-grid .gacha-card-copy b { font-size: .72vw; }
+  .gacha-detail-scene .gacha-pickup-grid .gacha-card-copy span { margin-top: .24vw; font-size: .62vw; }
+  .gacha-detail-scene .gacha-pickup-grid .gacha-card-copy small { margin-top: .18vw; font-size: .56vw; }
+  .gacha-detail-scene .up-heading { display: none; }
+  .gacha-detail-scene .footer-note { display: none; }
   .result-summary { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin: 0 0 19px; }
   .result-summary h2 { margin-top: 6px; font-size: 21px; font-weight: 800; }
   .result-counts { display: flex; align-items: center; gap: 12px; color: var(--ink-muted); font-size: 12px; }
@@ -327,7 +568,7 @@ const CSS = (width: number, kind: SceneKind, minHeightRatio: number) => `
 
 export function htmlShell(
   body: string,
-  opts: { width?: number; title?: string; kind?: SceneKind; ratio?: number } = {},
+  opts: { width?: number; title?: string; kind?: SceneKind; ratio?: number; className?: string; renderWidth?: number } = {},
 ): string {
   const width = opts.width ?? 900;
   const kind = opts.kind ?? "landscape";
@@ -335,7 +576,7 @@ export function htmlShell(
   return `<!doctype html>
 <html lang="zh-CN">
 <head><meta charset="utf-8"/><meta name="viewport" content="width=${width}"/><title>${esc(opts.title ?? "Project Sekai")}</title><style>${CSS(width, kind, ratio)}</style></head>
-<body><main class="scene ${kind}-scene" data-height-ratio="${ratio}">${body}</main></body>
+<body><main class="scene ${kind}-scene ${esc(opts.className ?? "")}" data-height-ratio="${ratio}"${opts.renderWidth ? ` data-render-width="${opts.renderWidth}"` : ""}>${body}</main></body>
 </html>`;
 }
 

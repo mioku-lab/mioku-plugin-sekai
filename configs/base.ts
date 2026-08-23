@@ -8,7 +8,6 @@ export interface SekaiConfig {
   defaultPulls: number;
   maxPulls: number;
   showTrained: boolean;
-  imageWidth: number;
 }
 
 export const DEFAULT_CONFIG: SekaiConfig = {
@@ -21,7 +20,6 @@ export const DEFAULT_CONFIG: SekaiConfig = {
   defaultPulls: 10,
   maxPulls: 300,
   showTrained: true,
-  imageWidth: 900,
 };
 
 export function cloneConfig<T>(value: T): T {
@@ -56,6 +54,5 @@ export function normalizeSekaiConfig(config: any): SekaiConfig {
     defaultPulls: numOrDefault(c.defaultPulls, DEFAULT_CONFIG.defaultPulls, 1, 300),
     maxPulls: numOrDefault(c.maxPulls, DEFAULT_CONFIG.maxPulls, 1, 300),
     showTrained: boolOrDefault(c.showTrained, DEFAULT_CONFIG.showTrained),
-    imageWidth: numOrDefault(c.imageWidth, DEFAULT_CONFIG.imageWidth, 480, 1600),
   };
 }

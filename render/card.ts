@@ -100,5 +100,5 @@ export function renderCardDetail(
     </section>
     <div class="footer-note">✦ PROJECT SEKAI · CARD ARCHIVE ✦</div>`;
 
-  return htmlShell(body, { title: cardTitle(card), kind: "landscape", ratio: 1.17 });
+  return htmlShell(body, { title: cardTitle(card), kind: "landscape", ratio: 1.17, renderWidth: 1159 });
 }

@@ -39,7 +39,7 @@ export async function handleRoll(h: HandlerContext, requested: number): Promise<
       charMap,
       config.showTrained,
     );
-    const imagePath = await renderToImage(h.screenshot, html, config.imageWidth);
+    const imagePath = await renderToImage(h.screenshot, html);
     await replyImage(h.ctx, h.event, imagePath, `【${gacha.name}】${stat}　共${pulls}抽`);
     return `已为用户发送 ${gacha.name} 的 ${pulls} 抽结果图（${stat}）`;
   }

@@ -21,24 +21,24 @@ function rankingRanges(event: CompactEvent): string {
 export function renderEventDetail(event: CompactEvent, now = Date.now()): string {
   const image = event.assetbundleName ? eventImageUrl(event.assetbundleName) : "";
   const ranges = rankingRanges(event);
+  const timeline = [
+    ["开始", event.startAt],
+    ["排行公布", event.rankingAnnounceAt],
+    ["结束", event.aggregateAt],
+    ["奖励发放", event.distributionStartAt],
+    ["奖励分发截止", event.distributionEndAt],
+    ["活动关闭", event.closedAt],
+  ] as const;
   const body = `
-    <div class="event-detail-head"><div class="brand-mark">HATSUNE MIKU: COLORFUL STAGE!</div><span>EVENT #${event.id}</span></div>
+    <div class="event-detail-head"><div class="brand-mark">HATSUNE MIKU: COLORFUL STAGE!</div></div>
     <div class="event-detail-layout">
       <section class="event-copy">
-        <div class="eyebrow">${esc(eventType(event))}</div>
         <h1 class="event-title">${esc(event.nameZh ?? event.name)}</h1>
         ${event.nameZh && event.nameZh !== event.name ? `<div class="event-japanese">${esc(event.name)}</div>` : ""}
-        <div class="event-badges">${badge(eventType(event), "rgba(113, 92, 211, .8)")} ${status(event, now)}</div>
+        <div class="event-badges">${badge(eventType(event), "rgba(113, 92, 211, .86)")} ${status(event, now)}<span class="event-id">Event #${event.id}</span></div>
         <div class="event-timeline glass-soft">
           <div class="timeline-title">时间</div>
-          ${[
-            ["开始", event.startAt],
-            ["结算", event.aggregateAt],
-            ["排行公布", event.rankingAnnounceAt],
-            ["奖励发放", event.distributionStartAt],
-            ["奖励截止", event.distributionEndAt],
-            ["活动关闭", event.closedAt],
-          ].map(([key, value]) => `<div class="timeline-row"><span>${esc(key as string)}</span><b>${value ? fmtDate(value as number) : "-"}</b></div>`).join("")}
+          <div class="timeline-grid">${timeline.map(([key, value]) => `<div class="timeline-cell"><span>${esc(key)}</span><b>${value ? fmtDate(value) : "-"}</b></div>`).join("")}</div>
           <div class="timeline-range">${esc(timeRange(event.startAt, event.distributionEndAt))}</div>
         </div>
       </section>
@@ -47,7 +47,13 @@ export function renderEventDetail(event: CompactEvent, now = Date.now()): string
     ${panel("排名奖励档位", `<p class="ranking-copy">${esc(ranges || "暂无排名奖励数据")}</p>`, "glass ranking-panel")}
     <div class="footer-note">✦ EVENT ARCHIVE · ${esc(event.unit)} ✦</div>`;
 
-  return htmlShell(body, { title: event.nameZh ?? event.name, kind: "landscape", ratio: 0.6 });
+  return htmlShell(body, {
+    title: event.nameZh ?? event.name,
+    kind: "landscape",
+    ratio: 0.6,
+    className: "event-detail-scene",
+    renderWidth: 1600,
+  });
 }
 
 export function renderEventList(events: CompactEvent[]): string {
@@ -63,5 +69,5 @@ export function renderEventList(events: CompactEvent[]): string {
     </div>
     <div class="footer-note">✦ PROJECT SEKAI · EVENT ARCHIVE ✦</div>`;
 
-  return htmlShell(body, { title: "最近活动", kind: "portrait", ratio: 1.27 });
+  return htmlShell(body, { title: "最近活动", kind: "portrait", ratio: 1.27, renderWidth: 1111 });
 }
