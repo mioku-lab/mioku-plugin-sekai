@@ -2,6 +2,7 @@ import type { CharacterProfile, CompactCard, CompactCharacter } from "../types";
 import { cardImageUrl, characterFullUrl, characterIconUrl } from "../data/sources";
 import { badge, esc, head, htmlShell, panel } from "./theme";
 import { charFullName } from "./card";
+import { fillTemplate, loadUi } from "./ui";
 
 const UNIT_ICON: Record<string, string> = {
   light_sound: "♫",
@@ -57,25 +58,17 @@ export function renderCharacterDetail(
       ].join("")
     : "";
 
-  const body = `
-    <div class="detail-brand"><div class="brand-mark">CHARACTER PROFILE</div><span>#${character.id}</span></div>
-    <div class="character-layout">
-      <section class="character-hero glass-soft">
-        ${image}
-        <div class="character-hero-copy">
-          <div class="eyebrow">${esc(character.firstNameEn ?? "")} ${esc(character.givenNameEn ?? "")}</div>
-          <h1>${esc(charFullName(character))}</h1>
-          ${badge(`${UNIT_ICON[character.unit] ?? "✦"} ${unitName}`, unitColor)}
-          ${profileText}
-        </div>
-      </section>
-      <div class="character-info">
-        ${panel("基本信息", `<div class="profile-table">${basic}</div>`, "glass character-panel")}
-        ${panel("个人档案", detail || `<p class="muted">暂无详细档案</p>`, "glass character-panel")}
-        <div class="character-quote glass-soft">✦ ${esc(profile?.introduction?.split(/[。！？]/)[0] || "一起去创造属于我们的舞台吧")}。</div>
-      </div>
-    </div>
-    <div class="footer-note">✦ HATSUNE MIKU: COLORFUL STAGE! · CHARACTER ARCHIVE ✦</div>`;
+  const body = fillTemplate(loadUi("templates/character-detail.html"), {
+    CHARACTER_ID: String(character.id),
+    HERO_IMAGE: image,
+    NAME_EN: `${character.firstNameEn ?? ""} ${character.givenNameEn ?? ""}`.trim(),
+    NAME: esc(charFullName(character)),
+    UNIT_BADGE: badge(`${UNIT_ICON[character.unit] ?? "✦"} ${unitName}`, unitColor),
+    PROFILE_TEXT: profileText,
+    BASIC_PANEL: panel("基本信息", `<div class="profile-table">${basic}</div>`, "glass character-panel"),
+    PROFILE_PANEL: panel("个人档案", detail || `<p class="muted">暂无详细档案</p>`, "glass character-panel"),
+    QUOTE: esc(profile?.introduction?.split(/[。！？]/)[0] || "一起去创造属于我们的舞台吧"),
+  });
 
   return htmlShell(body, { title: charFullName(character), kind: "landscape", ratio: 0.8, renderWidth: 1402 });
 }
@@ -98,24 +91,24 @@ export function renderCharacterList(
     return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
   });
 
-  const body = `
-    ${head("角色列表", `${characters.length} MEMBERS`)}
-    <div class="character-list">
-      ${sortedKeys.map((unit) => {
-        const meta = unitMap[unit];
-        const list = groups.get(unit) ?? [];
-        const color = meta?.colorCode ?? "#7f9dec";
-        const cells = list.map((c) => {
-          const name = charFullName(c);
-          const icon = c.iconFileName
-            ? `<img class="character-icon" src="${characterIconUrl(c.iconFileName)}" alt="${esc(name)}"/>`
-            : `<div class="character-icon-fallback" style="color:${color}">${esc(name.slice(0, 1))}</div>`;
-          return `<article class="character-cell" style="--unit-color:${color}">${icon}<div class="character-cell-copy"><b>${esc(name)}</b><span>#${c.id} ${esc(`${c.firstNameEn ?? ""} ${c.givenNameEn ?? ""}`.trim())}</span></div><i>✦</i></article>`;
-        }).join("");
-        return `<section class="unit-panel glass" style="--unit-color:${color}"><h2><span class="unit-icon">${UNIT_ICON[unit] ?? "✦"}</span>${esc(meta?.unitName ?? unit)}<small>${list.length} MEMBERS</small></h2><div class="character-grid ${list.length > 4 ? "six-col" : ""}">${cells}</div></section>`;
-      }).join("")}
-    </div>
-    <div class="footer-note">✦ 点击角色卡片可查看详细资料 · PROJECT SEKAI ✦</div>`;
+  const unitPanels = sortedKeys.map((unit) => {
+    const meta = unitMap[unit];
+    const list = groups.get(unit) ?? [];
+    const color = meta?.colorCode ?? "#7f9dec";
+    const cells = list.map((c) => {
+      const name = charFullName(c);
+      const icon = c.iconFileName
+        ? `<img class="character-icon" src="${characterIconUrl(c.iconFileName)}" alt="${esc(name)}"/>`
+        : `<div class="character-icon-fallback" style="color:${color}">${esc(name.slice(0, 1))}</div>`;
+      return `<article class="character-cell" style="--unit-color:${color}">${icon}<div class="character-cell-copy"><b>${esc(name)}</b><span>#${c.id} ${esc(`${c.firstNameEn ?? ""} ${c.givenNameEn ?? ""}`.trim())}</span></div><i>✦</i></article>`;
+    }).join("");
+    return `<section class="unit-panel glass" style="--unit-color:${color}"><h2><span class="unit-icon">${UNIT_ICON[unit] ?? "✦"}</span>${esc(meta?.unitName ?? unit)}<small>${list.length} MEMBERS</small></h2><div class="character-grid ${list.length > 4 ? "six-col" : ""}">${cells}</div></section>`;
+  }).join("");
+
+  const body = fillTemplate(loadUi("templates/character-list.html"), {
+    HEAD: head("角色列表", `${characters.length} MEMBERS`),
+    UNIT_PANELS: unitPanels,
+  });
 
   return htmlShell(body, { title: "角色列表", kind: "portrait", ratio: 1.53, renderWidth: 1014 });
 }

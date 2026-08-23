@@ -1,7 +1,24 @@
-import type { CompactCard, CompactCharacter, CompactGacha, GachaResult } from "../types";
+import type { CardRarity, CompactCard, CompactCharacter, CompactGacha, GachaResult } from "../types";
 import { cardImageUrl, gachaBannerUrl, gachaLogoUrl } from "../data/sources";
-import { RARITY_COLOR, RARITY_NAME, badge, esc, fmtDateShort, head, htmlShell, panel, timeRange } from "./theme";
+import { RARITY_COLOR, RARITY_NAME, badge, esc, fmtDateShort, head, htmlShell, timeRange } from "./theme";
 import { cardTitle, charFullName } from "./card";
+import { fillTemplate, loadUi } from "./ui";
+
+const DETAIL_RARITY_INK: Record<CardRarity, string> = {
+  rarity_1: "#687eb4",
+  rarity_2: "#2b96c7",
+  rarity_3: "#7c62da",
+  rarity_4: "#e09a29",
+  rarity_birthday: "#e0529b",
+};
+
+function clipIntro(raw: string | undefined, limit = 420): string {
+  const s = (raw ?? "").trim();
+  if (s.length <= limit) return s;
+  const head = s.slice(0, limit);
+  const br = head.lastIndexOf("\n\n");
+  return `${br > limit * 0.5 ? head.slice(0, br) : head}…`;
+}
 
 function cardCell(
   card: CompactCard,
@@ -30,7 +47,7 @@ export function renderGachaInfo(
 ): string {
   const normal = gacha.rates.filter((rate) => rate.lotteryType === "normal");
   const guarantee = gacha.rates.filter((rate) => rate.lotteryType === "guarantee");
-  const rateRow = (list: typeof normal) => list.map((rate) => `<span class="rate-item"><b style="color:${RARITY_COLOR[rate.rarity]}">${RARITY_NAME[rate.rarity]}</b> ${rate.rate}%</span>`).join("");
+  const rateRow = (list: typeof normal) => list.map((rate) => `<span class="rate-item"><b style="color:${DETAIL_RARITY_INK[rate.rarity]}">${RARITY_NAME[rate.rarity]}</b> ${rate.rate}%</span>`).join("");
   const seen = new Set<number>();
   const up: CompactCard[] = [];
   for (const cardId of gacha.gachaPickups ?? []) {
@@ -47,23 +64,22 @@ export function renderGachaInfo(
   const banner = gacha.assetbundleName
     ? `<img class="gacha-banner" src="${gachaBannerUrl(gacha.id)}" alt="" onerror="this.onerror=null;this.src='${gachaLogoUrl(gacha.assetbundleName)}'"/>`
     : `<div class="gacha-banner-fallback">✦ GACHA ✦</div>`;
+  const showcase = `${up.length ? featureCard(up[0], characters, showTrained) : `<div class="gacha-feature-fallback">${banner}</div>`}${up.length > 1 ? `<div class="gacha-pickup-grid">${up.slice(1).map((card) => cardCell(card, characters, showTrained)).join("")}</div>` : ""}`;
 
-  const body = `
-    <div class="gacha-detail-mark"><img class="gacha-logo" src="${gacha.assetbundleName ? gachaLogoUrl(gacha.assetbundleName) : ""}" alt="" onerror="this.style.display='none'"/><span>PROJECT SEKAI</span></div>
-    <section class="gacha-shell gacha-detail-frame">
-      <div class="gacha-detail-layout">
-        <div class="gacha-copy">
-          <h2 class="gacha-title">${esc(gacha.name)}</h2>
-          <div class="gacha-meta-card glass-soft"><div class="gacha-meta-item"><span>类型</span><b>${esc(gacha.gachaType)}</b></div><div class="gacha-meta-item"><span>举办期间</span><b>${esc(timeRange(gacha.startAt, gacha.endAt))}</b></div></div>
-          <div class="gacha-rate-card glass-soft"><div class="rate-heading">出現概率</div><div class="rate-row">${rateRow(normal)}</div>${guarantee.length ? `<div class="rate-row"><span class="rate-label">十连保底</span>${rateRow(guarantee)}</div>` : ""}</div>
-          ${tags ? `<div class="gacha-tags">${tags}</div>` : ""}
-          ${gacha.gachaInformation ? `<div class="gacha-information glass-soft"><div class="gacha-information-title">卡池介绍</div><p>${esc(gacha.gachaInformation).slice(0, 520)}</p></div>` : ""}
-        </div>
-        <div class="gacha-showcase">${up.length ? featureCard(up[0], characters, showTrained) : `<div class="gacha-feature-fallback">${banner}</div>`}${up.length > 1 ? `<div class="gacha-pickup-grid">${up.slice(1).map((card) => cardCell(card, characters, showTrained)).join("")}</div>` : ""}</div>
-      </div>
-      ${up.length ? `<div class="up-heading"><span>UP MEMBERS</span><small>${up.length} PICKUPS</small></div>` : ""}
-    </section>
-    <div class="footer-note">✦ GACHA ARCHIVE · ${fmtDateShort(gacha.startAt)} — ${fmtDateShort(gacha.endAt)} ✦</div>`;
+  const body = fillTemplate(loadUi("templates/gacha-detail.html"), {
+    LOGO: gacha.assetbundleName ? gachaLogoUrl(gacha.assetbundleName) : "",
+    NAME: esc(gacha.name),
+    TYPE: esc(gacha.gachaType),
+    PERIOD: esc(timeRange(gacha.startAt, gacha.endAt)),
+    NORMAL_RATES: rateRow(normal),
+    GUARANTEE_ROW: guarantee.length ? `<div class="rate-row"><span class="rate-label">十连保底</span>${rateRow(guarantee)}</div>` : "",
+    TAGS: tags ? `<div class="gacha-tags">${tags}</div>` : "",
+    INFORMATION: gacha.gachaInformation ? `<div class="gacha-information glass-soft"><div class="gacha-information-title">卡池介绍</div><p>${esc(clipIntro(gacha.gachaInformation))}</p></div>` : "",
+    SHOWCASE: showcase,
+    UP_HEADING: up.length ? `<div class="up-heading"><span>UP MEMBERS</span><small>${up.length} PICKUPS</small></div>` : "",
+    START: fmtDateShort(gacha.startAt),
+    END: fmtDateShort(gacha.endAt),
+  });
 
   return htmlShell(body, {
     title: gacha.name,
@@ -81,12 +97,14 @@ export function renderGachaResult(
 ): string {
   const counts = Object.entries(result.counts).map(([rarity, count]) => `${RARITY_NAME[rarity as keyof typeof RARITY_NAME]} × ${count}`).join("　");
   const displayPulls = result.pulls.slice(0, 100);
-  const body = `
-    ${head("抽卡结果", `${result.gacha.name} · ${result.pulls.length} PULLS`)}
-    <div class="result-summary"><div><span class="eyebrow">RESULT SUMMARY</span><h2>${esc(result.gacha.name)}</h2></div><div class="result-counts">${badge(counts || "暂无结果", "rgba(103, 108, 213, .76)")}<span>共 ${result.pulls.length} 抽</span></div></div>
-    <section class="glass result-shell"><div class="result-grid">${displayPulls.map((pull) => cardCell(pull.card, characters, showTrained, pull.guarantee ? "保底" : undefined)).join("")}</div></section>
-    ${result.pulls.length > displayPulls.length ? `<div class="muted result-truncated">仅展示前 ${displayPulls.length} 抽</div>` : ""}
-    <div class="footer-note">✦ GACHA RESULT · PROJECT SEKAI ✦</div>`;
+  const body = fillTemplate(loadUi("templates/gacha-result.html"), {
+    HEAD: head("抽卡结果", `${result.gacha.name} · ${result.pulls.length} PULLS`),
+    NAME: esc(result.gacha.name),
+    COUNTS_BADGE: badge(counts || "暂无结果", "rgba(103, 108, 213, .76)"),
+    PULLS: String(result.pulls.length),
+    CARDS: displayPulls.map((pull) => cardCell(pull.card, characters, showTrained, pull.guarantee ? "保底" : undefined)).join(""),
+    TRUNCATED: result.pulls.length > displayPulls.length ? `<div class="muted result-truncated">仅展示前 ${displayPulls.length} 抽</div>` : "",
+  });
 
   return htmlShell(body, { title: "抽卡结果", kind: "landscape", ratio: 0.6, renderWidth: 1619 });
 }

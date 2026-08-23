@@ -14,6 +14,7 @@ import {
   kv,
   panel,
 } from "./theme";
+import { fillTemplate, loadUi } from "./ui";
 
 export function cardTitle(card: CompactCard): string {
   return card.prefixZh ?? card.prefix;
@@ -69,36 +70,33 @@ export function renderCardDetail(
     .join("、");
   const trained = card.hasTrained ? cardImageUrl(card.assetbundleName, true) : undefined;
 
-  const body = `
-    ${head(cardTitle(card), `CARD #${card.id}`)}
-    <section class="glass card-detail-shell">
-      <div class="card-detail-top">
-        <div>
-          <div class="eyebrow">CARD #${card.id}</div>
-          <h2 class="hero-title" style="color:${rarityColor}">${esc(cardTitle(card))}</h2>
-          <div class="card-badges">${badge(`${RARITY_NAME[card.rarity]} ${RARITY_STARS[card.rarity]}`, rarityColor)} ${badge(`${attrName}属性`, attrColor)} <span class="character-name">${esc(charName)}</span></div>
-          ${card.prefixZh && card.prefix !== card.prefixZh ? `<div class="card-japanese">${esc(card.prefix)}</div>` : ""}
-          ${phrase ? `<p class="quote">「${esc(phrase)}」</p>` : ""}
-        </div>
-        <div class="stat-strip">
-          <div class="stat-tile"><span>✦</span><b>${card.maxPower ?? "-"}</b><small>综合力${card.trainedPower ? ` / ${card.trainedPower}` : ""}</small></div>
-          <div class="stat-tile"><span>▣</span><b>${fmtDate(card.releaseAt).slice(0, 10)}</b><small>实装日期</small></div>
-          <div class="stat-tile"><span>▤</span><b>${card.archivePublishedAt ? fmtDate(card.archivePublishedAt).slice(0, 10) : "-"}</b><small>进档案时间</small></div>
-        </div>
-      </div>
-      <div class="divider"></div>
-      <div class="card-art-pair">
-        ${art(cardImageUrl(card.assetbundleName, false), "通常")}
-        ${trained ? art(trained, "特训后") : `<div class="art-wrap art-empty"><span>暂无特训卡面</span></div>`}
-      </div>
-      <div class="info-grid">
-        ${panel("技能", `<p class="info-lead">${esc(card.cardSkillNameZh ?? card.cardSkillName)}</p><p class="muted">SKILL ID ${card.skillId}</p>`, "glass-soft info-panel")}
-        ${panel("卡池台词", `<p class="info-copy">${phrase ? esc(phrase) : "暂无台词记录"}</p>`, "glass-soft info-panel")}
-        ${panel("卡牌文案", `<p class="info-copy">${esc(card.prefixZh ?? card.prefix)}</p>`, "glass-soft info-panel")}
-        ${panel("特训素材", `<p class="info-copy">${costs ? esc(costs) : "无需特训"}</p>`, "glass-soft info-panel")}
-      </div>
-    </section>
-    <div class="footer-note">✦ PROJECT SEKAI · CARD ARCHIVE ✦</div>`;
+  const statTiles = `
+      <div class="stat-tile"><span>✦</span><b>${card.maxPower ?? "-"}</b><small>综合力${card.trainedPower ? ` / ${card.trainedPower}` : ""}</small></div>
+      <div class="stat-tile"><span>▣</span><b>${fmtDate(card.releaseAt).slice(0, 10)}</b><small>实装日期</small></div>
+      <div class="stat-tile"><span>▤</span><b>${card.archivePublishedAt ? fmtDate(card.archivePublishedAt).slice(0, 10) : "-"}</b><small>进档案时间</small></div>`;
+
+  const arts = `${art(cardImageUrl(card.assetbundleName, false), "通常")}${trained ? art(trained, "特训后") : `<div class="art-wrap art-empty"><span>暂无特训卡面</span></div>`}`;
+
+  const infoPanels = [
+    panel("技能", `<p class="info-lead">${esc(card.cardSkillNameZh ?? card.cardSkillName)}</p><p class="muted">SKILL ID ${card.skillId}</p>`, "glass-soft info-panel"),
+    panel("卡池台词", `<p class="info-copy">${phrase ? esc(phrase) : "暂无台词记录"}</p>`, "glass-soft info-panel"),
+    panel("卡牌文案", `<p class="info-copy">${esc(card.prefixZh ?? card.prefix)}</p>`, "glass-soft info-panel"),
+    panel("特训素材", `<p class="info-copy">${costs ? esc(costs) : "无需特训"}</p>`, "glass-soft info-panel"),
+  ].join("");
+
+  const body = fillTemplate(loadUi("templates/card-detail.html"), {
+    HEAD: head(cardTitle(card), `CARD #${card.id}`),
+    CARD_ID: String(card.id),
+    RARITY_COLOR: rarityColor,
+    TITLE: esc(cardTitle(card)),
+    BADGES: `${badge(`${RARITY_NAME[card.rarity]} ${RARITY_STARS[card.rarity]}`, rarityColor)} ${badge(`${attrName}属性`, attrColor)}`,
+    CHAR_NAME: esc(charName),
+    JAPANESE: card.prefixZh && card.prefix !== card.prefixZh ? `<div class="card-japanese">${esc(card.prefix)}</div>` : "",
+    QUOTE: phrase ? `<p class="quote">「${esc(phrase)}」</p>` : "",
+    STAT_TILES: statTiles,
+    ARTS: arts,
+    INFO_PANELS: infoPanels,
+  });
 
   return htmlShell(body, { title: cardTitle(card), kind: "landscape", ratio: 1.17, renderWidth: 1159 });
 }
