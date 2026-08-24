@@ -27,5 +27,5 @@ export function renderMusicDetail(music: CompactMusic): string {
     ARTIST: esc(music.artist ?? "Project Sekai"),
   });
 
-  return htmlShell(body, { title: music.titleZh ?? music.title, kind: "landscape", ratio: 0.8, renderWidth: 1402 });
+  return htmlShell(body, { title: music.titleZh ?? music.title, kind: "landscape", ratio: 0.68, renderWidth: 1402, className: "music-detail-scene" });
 }

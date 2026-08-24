@@ -25,11 +25,13 @@ function cardCell(
   characters: Map<number, CompactCharacter>,
   trained: boolean,
   extra?: string,
+  showId = false,
 ): string {
   const rarityColor = RARITY_COLOR[card.rarity];
   const art = trained && card.hasTrained ? cardImageUrl(card.assetbundleName, true) : cardImageUrl(card.assetbundleName, false);
   const character = characters.get(card.characterId);
-  return `<article class="gacha-card" style="--rarity-color:${rarityColor}"><div class="gacha-card-art"><img class="img-cover" src="${art}" alt="${esc(cardTitle(card))}"/></div><div class="gacha-card-copy"><b>${RARITY_NAME[card.rarity]}${extra ? ` · ${esc(extra)}` : ""}</b><span>${esc(cardTitle(card))}</span><small>${character ? esc(charFullName(character)) : `角色 #${card.characterId}`}</small></div></article>`;
+  const idBadge = showId && card.rarity !== "rarity_1" && card.rarity !== "rarity_2" ? `<span class="gacha-card-id">#${card.id}</span>` : "";
+  return `<article class="gacha-card" style="--rarity-color:${rarityColor}"><div class="gacha-card-art">${idBadge}<img class="img-cover" src="${art}" alt="${esc(cardTitle(card))}"/></div><div class="gacha-card-copy"><b>${RARITY_NAME[card.rarity]}${extra ? ` · ${esc(extra)}` : ""}</b><span>${esc(cardTitle(card))}</span><small>${character ? esc(charFullName(character)) : `角色 #${card.characterId}`}</small></div></article>`;
 }
 
 function featureCard(card: CompactCard, characters: Map<number, CompactCharacter>, trained: boolean): string {
@@ -102,9 +104,9 @@ export function renderGachaResult(
     NAME: esc(result.gacha.name),
     COUNTS_BADGE: badge(counts || "暂无结果", "rgba(103, 108, 213, .76)"),
     PULLS: String(result.pulls.length),
-    CARDS: displayPulls.map((pull) => cardCell(pull.card, characters, showTrained, pull.guarantee ? "保底" : undefined)).join(""),
+    CARDS: displayPulls.map((pull) => cardCell(pull.card, characters, showTrained, pull.guarantee ? "保底" : undefined, true)).join(""),
     TRUNCATED: result.pulls.length > displayPulls.length ? `<div class="muted result-truncated">仅展示前 ${displayPulls.length} 抽</div>` : "",
   });
 
-  return htmlShell(body, { title: "抽卡结果", kind: "landscape", ratio: 0.6, renderWidth: 1619 });
+  return htmlShell(body, { title: "抽卡结果", kind: "landscape", ratio: 0.46, renderWidth: 1619, className: "gacha-result-scene" });
 }

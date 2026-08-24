@@ -140,6 +140,10 @@
   .character-cell-copy b { font-size: 12px; font-weight: 900; }
   .character-cell-copy span { margin-top: 3px; color: #6375ac; font-size: 9px; letter-spacing: .03em; }
   .card-detail-shell { padding: 30px 32px 28px; }
+  .card-detail-scene { min-height: 0; }
+  .card-detail-scene .card-detail-shell,
+  .card-detail-scene .info-panel { backdrop-filter: blur(3px) saturate(125%); }
+  .card-detail-scene .info-panel { background: rgba(255, 255, 255, .3); }
   .card-detail-top { display: grid; grid-template-columns: 1fr 1.18fr; gap: 28px; align-items: center; }
   .card-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 17px; }
   .character-name { color: var(--ink-muted); font-size: 13px; font-weight: 700; }
@@ -162,6 +166,10 @@
   .info-lead { margin-top: 13px; font-size: 16px; font-weight: 800; }
   .info-copy { margin-top: 14px; color: var(--ink-soft); font-size: 12px; line-height: 1.8; }
   .music-shell { padding: 30px 34px 28px; }
+  .music-detail-scene { min-height: 0; }
+  .music-detail-scene .music-shell,
+  .music-detail-scene .music-meta { backdrop-filter: blur(3px) saturate(125%); }
+  .music-detail-scene .music-meta { background: rgba(255, 255, 255, .3); }
   .music-top { display: grid; grid-template-columns: 38% 1fr; gap: 32px; align-items: center; }
   .music-jacket { aspect-ratio: 1; overflow: hidden; border: 3px solid rgba(255,255,255,.72); border-radius: 23px; box-shadow: 0 13px 28px rgba(25,50,128,.28); }
   .music-title { margin-top: 9px; font-size: 43px; line-height: 1.06; font-weight: 900; }
@@ -171,7 +179,8 @@
   .music-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 16px; }
   .difficulty-heading { display: flex; align-items: baseline; gap: 12px; margin-top: 31px; color: #fff; font-size: 16px; font-weight: 800; }
   .difficulty-heading small { color: var(--ink-muted); font-size: 10px; letter-spacing: .17em; }
-  .difficulty-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 11px; margin-top: 13px; }
+  .difficulty-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 11px; margin-top: 13px; }
+  .difficulty-grid .difficulty-tile { flex: 0 0 calc((100% - 55px) / 6); }
   .difficulty-tile { min-height: 120px; padding: 16px 8px 10px; border: 2px solid color-mix(in srgb, var(--diff-color) 75%, transparent); border-radius: 17px; background: rgba(72,98,182,.28); text-align: center; box-shadow: inset 0 1px 0 rgba(255,255,255,.32); }
   .difficulty-tile b, .difficulty-tile span, .difficulty-tile small { display: block; }
   .difficulty-tile b { color: var(--diff-color); font-size: 29px; line-height: 1; }
@@ -340,7 +349,8 @@
   .gacha-detail-mark > span { display: none; }
   .gacha-detail-frame {
     width: 94.5%;
-    height: 68vw;
+    height: auto;
+    min-height: 60vw;
     margin: 0 0 0 3.5%;
     padding: 5.55vw 4vw 2.8vw;
     overflow: hidden;
@@ -349,7 +359,7 @@
     border: 1px solid rgba(255, 255, 255, .82);
     border-radius: 2.1vw;
     box-shadow: 0 17px 44px rgba(35, 68, 151, .18), inset 0 1px 0 rgba(255, 255, 255, .7);
-    backdrop-filter: blur(5px) saturate(128%);
+    backdrop-filter: blur(3px) saturate(125%);
   }
   .gacha-detail-layout {
     display: grid;
@@ -437,6 +447,9 @@
     text-shadow: 0 0 9px rgba(93, 224, 255, .8);
   }
   .gacha-detail-scene .gacha-information p { margin-top: 1.05vw; color: #41549e; font-size: .8vw; line-height: 1.85; white-space: pre-wrap; }
+  .gacha-detail-scene .gacha-meta-card,
+  .gacha-detail-scene .gacha-rate-card,
+  .gacha-detail-scene .gacha-information { backdrop-filter: blur(3px) saturate(125%); background: rgba(255, 255, 255, .3); }
   .gacha-showcase { display: flex; flex-direction: column; min-width: 0; padding-top: 0; }
   .gacha-feature-card,
   .gacha-feature-fallback {
@@ -487,6 +500,21 @@
   .result-grid .gacha-card-art { height: 124px; }
   .result-grid .gacha-card-copy { min-height: 69px; }
   .result-truncated { margin-top: 12px; text-align: center; }
+  .gacha-result-scene { min-height: 0; }
+  .gacha-result-scene .result-shell,
+  .gacha-result-scene .gacha-card { backdrop-filter: blur(3px) saturate(125%); }
+  .gacha-result-scene .gacha-card-art { position: relative; }
+  .gacha-result-scene .gacha-card-id {
+    position: absolute;
+    top: 7px;
+    right: 7px;
+    z-index: 1;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .02em;
+    text-shadow: 0 1px 4px rgba(10, 14, 50, .8);
+  }
   @media (max-width: 720px) {
     .scene { padding-left: 22px; padding-right: 22px; }
     .page-head h1 { font-size: 28px; }

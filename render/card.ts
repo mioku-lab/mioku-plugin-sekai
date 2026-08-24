@@ -98,5 +98,5 @@ export function renderCardDetail(
     INFO_PANELS: infoPanels,
   });
 
-  return htmlShell(body, { title: cardTitle(card), kind: "landscape", ratio: 1.17, renderWidth: 1159 });
+  return htmlShell(body, { title: cardTitle(card), kind: "landscape", ratio: 0.9, renderWidth: 1159, className: "card-detail-scene" });
 }
