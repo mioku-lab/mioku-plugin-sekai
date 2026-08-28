@@ -1,4 +1,4 @@
-import { definePlugin, type MiokiContext } from "mioki";
+import { definePlugin, type MiokuContext } from "mioku";
 import { ensureDataDir, getService, Services } from "mioku";
 import {
   cloneConfig,
@@ -30,7 +30,7 @@ const sekaiPlugin = definePlugin({
   version: "0.1.0",
   description: "初音未来·世界计划辅助：角色/卡牌/乐曲/活动/卡池查询与模拟抽卡",
 
-  async setup(ctx: MiokiContext) {
+  async setup(ctx: MiokuContext) {
     ctx.logger.info("sekai 插件正在初始化...");
 
     const dataDir = ensureDataDir(PLUGIN_NAME);
@@ -88,23 +88,32 @@ const sekaiPlugin = definePlugin({
       try {
         switch (cmd.type) {
           case "characters":
-            return await handleCharactersList(h);
+            await handleCharactersList(h);
+            break;
           case "character":
-            return await handleCharacter(h, cmd.query);
+            await handleCharacter(h, cmd.query);
+            break;
           case "card":
-            return await handleCard(h, cmd.query);
+            await handleCard(h, cmd.query);
+            break;
           case "music":
-            return await handleMusic(h, cmd.query);
+            await handleMusic(h, cmd.query);
+            break;
           case "event":
-            return await handleEvent(h, cmd.id);
+            await handleEvent(h, cmd.id);
+            break;
           case "eventList":
-            return await handleEventList(h, cmd.count);
+            await handleEventList(h, cmd.count);
+            break;
           case "gacha":
-            return await handleGachaInfo(h);
+            await handleGachaInfo(h);
+            break;
           case "roll":
-            return await handleRoll(h, cmd.pulls);
+            await handleRoll(h, cmd.pulls);
+            break;
           case "search":
-            return await handleSearch(h, cmd.query);
+            await handleSearch(h, cmd.query);
+            break;
           case "refresh": {
             store.refresh();
             ctx.logger.info("sekai: 数据缓存已手动刷新");
@@ -113,13 +122,12 @@ const sekaiPlugin = definePlugin({
               event,
               "数据缓存已清除，下次查询时将重新拉取（大文件可能需要一点时间）",
             );
-            return "已刷新 sekai 数据缓存";
+            break;
           }
         }
       } catch (error) {
         ctx.logger.error(`sekai 命令 ${cmd.type} 执行失败: ${error}`);
         await replyError(ctx, event, `世界计划查询出错了：${String(error)}`);
-        return `sekai 命令 ${cmd.type} 执行失败: ${String(error)}`;
       }
     });
 
