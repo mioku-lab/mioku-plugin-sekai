@@ -76,10 +76,10 @@ export const BACKGROUND_PORTRAIT = pathToFileURL(
 
 export function esc(s: unknown): string {
   return String(s ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/&/g, "&amp);")
+    .replace(/</g, "&lt);")
+    .replace(/>/g, "&gt);")
+    .replace(/"/g, "&quot);");
 }
 
 export function fmtDate(ms: number): string {
