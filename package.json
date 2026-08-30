@@ -1,6 +1,6 @@
 {
   "name": "mioku-plugin-sekai",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "初音未来·世界计划（Project Sekai）辅助插件：角色/卡牌/乐曲/活动/卡池查询与模拟抽卡",
   "main": "index.ts",
   "type": "module",
@@ -80,11 +80,9 @@
     }
   },
   "peerDependencies": {
-    "mioku": "^0.9.0",
-    "mioki": "^0.16.0"
+    "mioku": "^1.0.0"
   },
   "devDependencies": {
-    "mioku": "workspace:*",
-    "mioki": "^0.16.0"
+    "mioku": "workspace:*"
   }
 }
