@@ -27,8 +27,6 @@ const PLUGIN_NAME = "sekai";
 
 const sekaiPlugin = definePlugin({
   name: PLUGIN_NAME,
-  version: "0.1.0",
-  description: "初音未来·世界计划辅助：角色/卡牌/乐曲/活动/卡池查询与模拟抽卡",
 
   async setup(ctx: MiokuContext) {
     ctx.logger.info("sekai 插件正在初始化...");
